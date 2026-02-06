@@ -170,6 +170,9 @@ def make_api_request(method: str, endpoint: str, json_data: Optional[Dict] = Non
 
 def check_api_health() -> bool:
     """Verifica se a API está disponível"""
+    if not SSL_VERIFY:
+        logger.warning("AVISO: Verificação SSL desabilitada. Conexão não é totalmente segura.")
+    
     try:
         response = make_api_request('GET', '/health', timeout=5, retry_count=1)
         if response and response.status_code == 200:
@@ -177,7 +180,8 @@ def check_api_health() -> bool:
             if data.get("status") == "healthy":
                 logger.info("[OK] API esta disponivel")
                 return True
-    except Exception:
+    except Exception as e:
+        logger.debug(f"Erro ao verificar health: {e}")
         pass
     
     logger.warning("[AVISO] Nao foi possivel verificar API automaticamente")
