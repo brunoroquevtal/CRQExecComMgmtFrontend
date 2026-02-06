@@ -1,0 +1,64 @@
+2026-02-05 15:42:02,006 - __main__ - INFO - ============================================================
+2026-02-05 15:42:02,006 - __main__ - INFO - MODO DEBUG ATIVADO
+2026-02-05 15:42:02,006 - __main__ - INFO - Todas as requisicoes serao logadas em detalhes
+2026-02-05 15:42:02,006 - __main__ - INFO - ============================================================
+2026-02-05 15:42:02,100 - __main__ - INFO - ============================================================
+2026-02-05 15:42:02,100 - __main__ - INFO - INICIANDO SERVIDOR API EM MODO DEBUG
+2026-02-05 15:42:02,100 - __main__ - INFO - Porta: 8000
+2026-02-05 15:42:02,100 - __main__ - INFO - Todas as requisicoes serao logadas em detalhes
+2026-02-05 15:42:02,100 - __main__ - INFO - ============================================================
+2026-02-05 15:42:02,104 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-02-05 15:42:05,349 - __main__ - DEBUG - ============================================================
+2026-02-05 15:42:05,350 - __main__ - DEBUG - [REQUISICAO RECEBIDA] GET /health
+2026-02-05 15:42:05,350 - __main__ - DEBUG - Query params: {}
+2026-02-05 15:42:05,350 - __main__ - DEBUG - Headers: {'host': 'localhost:8000', 'user-agent': 'python-requests/2.32.5', 'accept-encoding': 'gzip, deflate, zstd', 'accept': '*/*', 'connection': 'keep-alive'}
+2026-02-05 15:42:05,352 - __main__ - DEBUG - [RESPOSTA] Status: 200, Tempo: 0.003s
+2026-02-05 15:42:05,352 - __main__ - DEBUG - ============================================================
+2026-02-05 15:42:18,394 - __main__ - DEBUG - ============================================================
+2026-02-05 15:42:18,394 - __main__ - DEBUG - [REQUISICAO RECEBIDA] GET /health
+2026-02-05 15:42:18,394 - __main__ - DEBUG - Query params: {}
+2026-02-05 15:42:18,395 - __main__ - DEBUG - Headers: {'host': 'localhost:8000', 'connection': 'keep-alive', 'sec-ch-ua': '"Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"', 'sec-ch-ua-mobile': '?0', 'sec-ch-ua-platform': '"Windows"', 'dnt': '1', 'upgrade-insecure-requests': '1', 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7', 'sec-fetch-site': 'none', 'sec-fetch-mode': 'navigate', 'sec-fetch-user': '?1', 'sec-fetch-dest': 'document', 'accept-encoding': 'gzip, deflate, br, zstd', 'accept-language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,zh-CN;q=0.6,zh;q=0.5', 'cookie': 'ajs_anonymous_id=bf95d874-5e24-4303-997f-4686282149de; _streamlit_xsrf=2|20486ef1|6d6c0d676b49818c7f450f429c497bc4|1770242554'}
+2026-02-05 15:42:18,396 - __main__ - DEBUG - [RESPOSTA] Status: 200, Tempo: 0.002s
+2026-02-05 15:42:18,396 - __main__ - DEBUG - ============================================================
+2026-02-05 15:42:19,705 - __main__ - DEBUG - ============================================================
+2026-02-05 15:42:19,705 - __main__ - DEBUG - [REQUISICAO RECEBIDA] GET /favicon.ico
+2026-02-05 15:42:19,706 - __main__ - DEBUG - Query params: {}
+2026-02-05 15:42:19,706 - __main__ - DEBUG - Headers: {'host': 'localhost:8000', 'connection': 'keep-alive', 'sec-ch-ua-platform': '"Windows"', 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'sec-ch-ua': '"Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"', 'dnt': '1', 'sec-ch-ua-mobile': '?0', 'accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8', 'sec-fetch-site': 'same-origin', 'sec-fetch-mode': 'no-cors', 'sec-fetch-dest': 'image', 'referer': 'http://localhost:8000/health', 'accept-encoding': 'gzip, deflate, br, zstd', 'accept-language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,zh-CN;q=0.6,zh;q=0.5', 'cookie': 'ajs_anonymous_id=bf95d874-5e24-4303-997f-4686282149de; _streamlit_xsrf=2|20486ef1|6d6c0d676b49818c7f450f429c497bc4|1770242554'}
+
+
+
+2026-02-05 15:55:15,079 - __main__ - INFO - ============================================================
+2026-02-05 15:55:15,080 - __main__ - INFO - MODO DEBUG ATIVADO
+2026-02-05 15:55:15,080 - __main__ - INFO - Todas as requisicoes serao logadas em detalhes
+2026-02-05 15:55:15,080 - __main__ - INFO - ============================================================
+2026-02-05 15:55:15,123 - fastapi - ERROR - Form data requires "python-multipart" to be installed. 
+You can install "python-multipart" with: 
+
+pip install python-multipart
+
+2026-02-05 15:56:06,142 - __main__ - INFO - ============================================================
+2026-02-05 15:56:06,142 - __main__ - INFO - MODO DEBUG ATIVADO
+2026-02-05 15:56:06,142 - __main__ - INFO - Todas as requisicoes serao logadas em detalhes
+2026-02-05 15:56:06,142 - __main__ - INFO - ============================================================
+2026-02-05 15:56:06,256 - __main__ - INFO - ============================================================
+2026-02-05 15:56:06,256 - __main__ - INFO - INICIANDO SERVIDOR API EM MODO DEBUG
+2026-02-05 15:56:06,256 - __main__ - INFO - Porta: 8000
+2026-02-05 15:56:06,256 - __main__ - INFO - Todas as requisicoes serao logadas em detalhes
+2026-02-05 15:56:06,256 - __main__ - INFO - ============================================================
+2026-02-05 15:56:06,259 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-02-05 15:56:09,416 - __main__ - DEBUG - ============================================================
+2026-02-05 15:56:09,416 - __main__ - DEBUG - [REQUISICAO RECEBIDA] GET /health
+2026-02-05 15:56:09,416 - __main__ - DEBUG - Query params: {}
+2026-02-05 15:56:09,416 - __main__ - DEBUG - Headers: {'host': 'localhost:8000', 'user-agent': 'python-requests/2.32.5', 'accept-encoding': 'gzip, deflate, zstd', 'accept': '*/*', 'connection': 'keep-alive'}
+2026-02-05 15:56:09,418 - __main__ - DEBUG - [RESPOSTA] Status: 200, Tempo: 0.003s
+2026-02-05 15:56:09,419 - __main__ - DEBUG - ============================================================
+2026-02-05 15:56:23,494 - __main__ - DEBUG - ============================================================
+2026-02-05 15:56:23,494 - __main__ - DEBUG - [REQUISICAO RECEBIDA] GET /docs
+2026-02-05 15:56:23,494 - __main__ - DEBUG - Query params: {}
+2026-02-05 15:56:23,495 - __main__ - DEBUG - Headers: {'host': 'localhost:8000', 'connection': 'keep-alive', 'sec-ch-ua': '"Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"', 'sec-ch-ua-mobile': '?0', 'sec-ch-ua-platform': '"Windows"', 'dnt': '1', 'upgrade-insecure-requests': '1', 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7', 'sec-fetch-site': 'none', 'sec-fetch-mode': 'navigate', 'sec-fetch-user': '?1', 'sec-fetch-dest': 'document', 'accept-encoding': 'gzip, deflate, br, zstd', 'accept-language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,zh-CN;q=0.6,zh;q=0.5', 'cookie': 'ajs_anonymous_id=bf95d874-5e24-4303-997f-4686282149de; _streamlit_xsrf=2|623871a0|2f1c123629399edd3d351013de396495|1770242554'}
+2026-02-05 15:56:23,495 - __main__ - DEBUG - [RESPOSTA] Status: 200, Tempo: 0.001s
+2026-02-05 15:56:23,495 - __main__ - DEBUG - ============================================================
+2026-02-05 15:56:23,664 - __main__ - DEBUG - ============================================================
+2026-02-05 15:56:23,664 - __main__ - DEBUG - [REQUISICAO RECEBIDA] GET /openapi.json
+2026-02-05 15:56:23,665 - __main__ - DEBUG - Query params: {}
+2026-02-05 15:56:23,665 - __main__ - DEBUG - Headers: {'host': 'localhost:8000', 'connection': 'keep-alive', 'sec-ch-ua-platform': '"Windows"', 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'accept': 'application/json,*/*', 'sec-ch-ua': '"Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"', 'dnt': '1', 'sec-ch-ua-mobile': '?0', 'sec-fetch-site': 'same-origin', 'sec-fetch-mode': 'cors', 'sec-fetch-dest': 'empty', 'referer': 'http://localhost:8000/docs', 'accept-encoding': 'gzip, deflate, br, zstd', 'accept-language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,zh-CN;q=0.6,zh;q=0.5', 'cookie': 'ajs_anonymous_id=bf95d874-5e24-4303-997f-4686282149de; _streamlit_xsrf=2|623871a0|2f1c123629399edd3d351013de396495|1770242554'}
