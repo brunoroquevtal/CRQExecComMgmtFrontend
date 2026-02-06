@@ -15,11 +15,17 @@ npm run dev
 
 Crie um arquivo `.env` na raiz do projeto frontend:
 
+**Para desenvolvimento local:**
 ```env
 VITE_API_URL=http://localhost:3000/api
 ```
 
-**Nota:** Se não definir `VITE_API_URL`, o frontend usará `/api` como padrão (proxy do Vite).
+**Para produção (com backend no Netlify):**
+```env
+VITE_API_URL=https://crqcommunidationbackend.netlify.app/api
+```
+
+**Nota:** Se não definir `VITE_API_URL`, o frontend usará `/api` como padrão (proxy do Vite em desenvolvimento).
 
 ### Proxy de Desenvolvimento
 

@@ -1,6 +1,8 @@
 import axios from 'axios';
 
 // URL base da API - usa variável de ambiente ou padrão relativo
+// Se VITE_API_URL não estiver definida, usa '/api' (proxy do Vite em desenvolvimento)
+// Em produção, defina VITE_API_URL com a URL completa do backend
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Criar instância do axios com configuração base
