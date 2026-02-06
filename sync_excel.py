@@ -75,15 +75,22 @@ API_BASE_URL = os.getenv("API_BASE_URL", "https://crqcommunidationbackend.netlif
 SSL_VERIFY_ENV = os.getenv("SSL_VERIFY", "").lower()
 DISABLE_SSL_ENV = os.getenv("DISABLE_SSL_VERIFY", "").lower()
 
+# Log de diagnóstico (antes do logger estar configurado, usar print)
+if DISABLE_SSL_ENV:
+    print(f"[DEBUG] DISABLE_SSL_VERIFY encontrado: '{DISABLE_SSL_ENV}'")
+if SSL_VERIFY_ENV:
+    print(f"[DEBUG] SSL_VERIFY encontrado: '{SSL_VERIFY_ENV}'")
+
 # Determinar se SSL deve ser verificado
 if DISABLE_SSL_ENV in ("true", "1", "yes", "on"):
     SSL_VERIFY = False
-    logger.info("SSL_VERIFY desabilitado via DISABLE_SSL_VERIFY")
+    print("[DEBUG] SSL_VERIFY definido como False via DISABLE_SSL_VERIFY")
 elif SSL_VERIFY_ENV in ("false", "0", "no", "off"):
     SSL_VERIFY = False
-    logger.info("SSL_VERIFY desabilitado via SSL_VERIFY")
+    print("[DEBUG] SSL_VERIFY definido como False via SSL_VERIFY")
 else:
     SSL_VERIFY = True
+    print(f"[DEBUG] SSL_VERIFY definido como True (padrão). DISABLE_SSL_VERIFY='{DISABLE_SSL_ENV}', SSL_VERIFY='{SSL_VERIFY_ENV}'")
 
 # Mapeamento de sequências conhecidas
 SEQUENCIAS = {
@@ -117,6 +124,11 @@ def make_api_request(method: str, endpoint: str, json_data: Optional[Dict] = Non
     
     # Configuração de SSL
     verify_ssl = SSL_VERIFY
+    # Log de diagnóstico na primeira requisição
+    if not hasattr(make_api_request, '_ssl_debug_logged'):
+        logger.debug(f"[DEBUG] make_api_request chamado com verify_ssl={verify_ssl}, SSL_VERIFY={SSL_VERIFY}")
+        make_api_request._ssl_debug_logged = True
+    
     if not verify_ssl:
         try:
             import urllib3
@@ -127,6 +139,11 @@ def make_api_request(method: str, endpoint: str, json_data: Optional[Dict] = Non
         if not hasattr(make_api_request, '_ssl_warning_logged'):
             logger.warning("AVISO: Verificação SSL desabilitada. Use apenas em ambientes confiáveis!")
             make_api_request._ssl_warning_logged = True
+    else:
+        # Log se SSL está habilitado mas ainda há erro
+        if not hasattr(make_api_request, '_ssl_enabled_logged'):
+            logger.debug(f"[DEBUG] SSL verificação HABILITADA (verify={verify_ssl})")
+            make_api_request._ssl_enabled_logged = True
     
     for attempt in range(retry_count + 1):
         try:
