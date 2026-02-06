@@ -145,16 +145,22 @@ def make_api_request(method: str, endpoint: str, json_data: Optional[Dict] = Non
             logger.debug(f"[DEBUG] SSL verificação HABILITADA (verify={verify_ssl})")
             make_api_request._ssl_enabled_logged = True
     
+    # Headers padrão para todas as requisições
+    headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    }
+    
     for attempt in range(retry_count + 1):
         try:
             if method.upper() == 'GET':
-                response = requests.get(url, timeout=timeout, verify=verify_ssl)
+                response = requests.get(url, headers=headers, timeout=timeout, verify=verify_ssl)
             elif method.upper() == 'POST':
-                response = requests.post(url, json=json_data, timeout=timeout, verify=verify_ssl)
+                response = requests.post(url, headers=headers, json=json_data, timeout=timeout, verify=verify_ssl)
             elif method.upper() == 'PUT':
-                response = requests.put(url, json=json_data, timeout=timeout, verify=verify_ssl)
+                response = requests.put(url, headers=headers, json=json_data, timeout=timeout, verify=verify_ssl)
             elif method.upper() == 'DELETE':
-                response = requests.delete(url, json=json_data, timeout=timeout, verify=verify_ssl)
+                response = requests.delete(url, headers=headers, json=json_data, timeout=timeout, verify=verify_ssl)
             else:
                 raise ValueError(f"Método HTTP não suportado: {method}")
             
@@ -187,7 +193,17 @@ def make_api_request(method: str, endpoint: str, json_data: Optional[Dict] = Non
                 continue
                 
         except requests.exceptions.HTTPError as e:
-            logger.error(f"Erro HTTP {e.response.status_code} em {method} {url}: {e.response.text[:500]}")
+            error_text = e.response.text[:500] if e.response else "Sem resposta"
+            logger.error(f"Erro HTTP {e.response.status_code} em {method} {url}: {error_text}")
+            
+            # Se for erro 500 com "Invalid API key", pode ser problema do Netlify
+            if e.response.status_code == 500 and "Invalid API key" in error_text:
+                logger.error("ERRO: 'Invalid API key' - Isso pode indicar:")
+                logger.error("  1. Problema de configuração no Netlify Functions")
+                logger.error("  2. Backend esperando autenticação que não foi configurada")
+                logger.error("  3. Problema com o wrapper serverless-http")
+                logger.error("Verifique os logs do backend no Netlify para mais detalhes.")
+            
             return e.response
             
         except Exception as e:
