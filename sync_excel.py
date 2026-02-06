@@ -72,9 +72,18 @@ API_BASE_URL = os.getenv("API_BASE_URL", "https://crqcommunidationbackend.netlif
 
 # Verificação SSL (pode ser desabilitada em ambientes corporativos com proxy)
 # Defina SSL_VERIFY=false ou DISABLE_SSL_VERIFY=true para desabilitar
-SSL_VERIFY = os.getenv("SSL_VERIFY", "true").lower() not in ("false", "0", "no", "off")
-if os.getenv("DISABLE_SSL_VERIFY", "").lower() in ("true", "1", "yes", "on"):
+SSL_VERIFY_ENV = os.getenv("SSL_VERIFY", "").lower()
+DISABLE_SSL_ENV = os.getenv("DISABLE_SSL_VERIFY", "").lower()
+
+# Determinar se SSL deve ser verificado
+if DISABLE_SSL_ENV in ("true", "1", "yes", "on"):
     SSL_VERIFY = False
+    logger.info("SSL_VERIFY desabilitado via DISABLE_SSL_VERIFY")
+elif SSL_VERIFY_ENV in ("false", "0", "no", "off"):
+    SSL_VERIFY = False
+    logger.info("SSL_VERIFY desabilitado via SSL_VERIFY")
+else:
+    SSL_VERIFY = True
 
 # Mapeamento de sequências conhecidas
 SEQUENCIAS = {
