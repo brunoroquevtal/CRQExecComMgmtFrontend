@@ -66,7 +66,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Configurações
-API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:3000")
+# URL padrão: Backend no Netlify (produção)
+# Para desenvolvimento local, defina: export API_BASE_URL=http://localhost:3000
+API_BASE_URL = os.getenv("API_BASE_URL", "https://crqcommunidationbackend.netlify.app/.netlify/functions/api")
 
 # Mapeamento de sequências conhecidas
 SEQUENCIAS = {

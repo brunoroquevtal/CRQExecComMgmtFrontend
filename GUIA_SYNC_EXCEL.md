@@ -18,9 +18,12 @@ pip install pandas openpyxl requests
 
 ## ⚙️ Configuração
 
-O script usa a API Node.js por padrão na porta **3000** (ao invés da porta 8000 da versão Python).
+O script usa a API Node.js no Netlify por padrão (produção).
 
-Para alterar a URL da API, defina a variável de ambiente:
+**URL padrão (produção):**
+- `https://crqcommunidationbackend.netlify.app/.netlify/functions/api`
+
+**Para desenvolvimento local**, defina a variável de ambiente:
 
 **Windows PowerShell:**
 ```powershell
