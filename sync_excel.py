@@ -68,7 +68,7 @@ logger = logging.getLogger(__name__)
 # Configurações
 # URL padrão: Backend no Netlify (produção)
 # Para desenvolvimento local, defina: export API_BASE_URL=http://localhost:3000
-API_BASE_URL = os.getenv("API_BASE_URL", "https://crqcommunidationbackend.netlify.app/.netlify/functions/api")
+API_BASE_URL = os.getenv("API_BASE_URL", "https://crqcommunidationbackend.netlify.app")
 
 # Verificação SSL (pode ser desabilitada em ambientes corporativos com proxy)
 # Defina SSL_VERIFY=false ou DISABLE_SSL_VERIFY=true para desabilitar
