@@ -1,10 +1,11 @@
 [build]
   base = "frontend"
-  command = "npm install && npm run build"
+  command = "npm install --include=dev && npm run build"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "18"
+  NPM_CONFIG_PRODUCTION = "false"
 
 [[redirects]]
   from = "/*"
