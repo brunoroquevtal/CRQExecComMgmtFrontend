@@ -108,24 +108,45 @@ function Dashboard() {
 
   const { geral, por_sequencia } = filteredStats;
 
+  // Garantir que geral existe e tem todas as propriedades
+  const geralSafe = geral || {
+    total: 0,
+    concluidas: 0,
+    em_execucao_no_prazo: 0,
+    em_execucao_fora_prazo: 0,
+    a_iniciar_no_prazo: 0,
+    a_iniciar_fora_prazo: 0
+  };
+
   // Dados para gráfico de pizza (status)
   const statusData = [
-    { name: 'Concluídas', value: geral.concluidas || 0, color: '#28a745' },
-    { name: 'Em Execução no Prazo', value: geral.em_execucao_no_prazo || 0, color: '#3B82F6' },
-    { name: 'Em Execução Fora do Prazo', value: geral.em_execucao_fora_prazo || 0, color: '#EF4444' },
-    { name: 'A Iniciar no Prazo', value: geral.a_iniciar_no_prazo || 0, color: '#DBEAFE' },
-    { name: 'A Iniciar Fora do Prazo', value: geral.a_iniciar_fora_prazo || 0, color: '#FED7AA' }
+    { name: 'Concluídas', value: geralSafe.concluidas || 0, color: '#28a745' },
+    { name: 'Em Execução no Prazo', value: geralSafe.em_execucao_no_prazo || 0, color: '#3B82F6' },
+    { name: 'Em Execução Fora do Prazo', value: geralSafe.em_execucao_fora_prazo || 0, color: '#EF4444' },
+    { name: 'A Iniciar no Prazo', value: geralSafe.a_iniciar_no_prazo || 0, color: '#DBEAFE' },
+    { name: 'A Iniciar Fora do Prazo', value: geralSafe.a_iniciar_fora_prazo || 0, color: '#FED7AA' }
   ].filter(item => item.value > 0);
 
   // Dados para gráfico de barras (por sequência)
-  const sequenciaData = Object.entries(por_sequencia).map(([seq, stats]) => ({
-    sequencia: seq,
-    concluidas: stats.concluidas || 0,
-    em_execucao_no_prazo: stats.em_execucao_no_prazo || 0,
-    em_execucao_fora_prazo: stats.em_execucao_fora_prazo || 0,
-    a_iniciar_no_prazo: stats.a_iniciar_no_prazo || 0,
-    a_iniciar_fora_prazo: stats.a_iniciar_fora_prazo || 0
-  }));
+  const sequenciaData = Object.entries(por_sequencia || {}).map(([seq, stats]) => {
+    // Garantir que stats existe
+    const statsSafe = stats || {
+      concluidas: 0,
+      em_execucao_no_prazo: 0,
+      em_execucao_fora_prazo: 0,
+      a_iniciar_no_prazo: 0,
+      a_iniciar_fora_prazo: 0
+    };
+    
+    return {
+      sequencia: seq,
+      concluidas: statsSafe.concluidas || 0,
+      em_execucao_no_prazo: statsSafe.em_execucao_no_prazo || 0,
+      em_execucao_fora_prazo: statsSafe.em_execucao_fora_prazo || 0,
+      a_iniciar_no_prazo: statsSafe.a_iniciar_no_prazo || 0,
+      a_iniciar_fora_prazo: statsSafe.a_iniciar_fora_prazo || 0
+    };
+  });
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -182,7 +203,7 @@ function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-vtal-gray-600 text-xs font-medium">Total</p>
-              <p className="text-2xl font-display font-bold text-vtal-gray-800 mt-1">{geral.total || 0}</p>
+              <p className="text-2xl font-display font-bold text-vtal-gray-800 mt-1">{geralSafe.total || 0}</p>
             </div>
             <div className="text-2xl">📋</div>
           </div>
@@ -192,7 +213,7 @@ function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-vtal-gray-600 text-xs font-medium">Concluídas</p>
-              <p className="text-2xl font-display font-bold text-green-600 mt-1">{geral.concluidas || 0}</p>
+              <p className="text-2xl font-display font-bold text-green-600 mt-1">{geralSafe.concluidas || 0}</p>
             </div>
             <div className="text-2xl">✅</div>
           </div>
@@ -202,7 +223,7 @@ function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-vtal-gray-600 text-xs font-medium">Em Exec. no Prazo</p>
-              <p className="text-2xl font-display font-bold text-blue-600 mt-1">{geral.em_execucao_no_prazo || 0}</p>
+              <p className="text-2xl font-display font-bold text-blue-600 mt-1">{geralSafe.em_execucao_no_prazo || 0}</p>
             </div>
             <div className="text-2xl">⏳</div>
           </div>
@@ -212,7 +233,7 @@ function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-vtal-gray-600 text-xs font-medium">Em Exec. Fora Prazo</p>
-              <p className="text-2xl font-display font-bold text-red-500 mt-1">{geral.em_execucao_fora_prazo || 0}</p>
+              <p className="text-2xl font-display font-bold text-red-500 mt-1">{geralSafe.em_execucao_fora_prazo || 0}</p>
             </div>
             <div className="text-2xl">🔴</div>
           </div>
@@ -222,7 +243,7 @@ function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-vtal-gray-600 text-xs font-medium">A Iniciar no Prazo</p>
-              <p className="text-2xl font-display font-bold text-blue-800 mt-1">{geral.a_iniciar_no_prazo || 0}</p>
+              <p className="text-2xl font-display font-bold text-blue-800 mt-1">{geralSafe.a_iniciar_no_prazo || 0}</p>
             </div>
             <div className="text-2xl">🟦</div>
           </div>
@@ -232,7 +253,7 @@ function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-vtal-gray-600 text-xs font-medium">A Iniciar Fora Prazo</p>
-              <p className="text-2xl font-display font-bold text-orange-600 mt-1">{geral.a_iniciar_fora_prazo || 0}</p>
+              <p className="text-2xl font-display font-bold text-orange-600 mt-1">{geralSafe.a_iniciar_fora_prazo || 0}</p>
             </div>
             <div className="text-2xl">🟠</div>
           </div>
