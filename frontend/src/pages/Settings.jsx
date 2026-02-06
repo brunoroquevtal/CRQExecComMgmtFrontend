@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import toast from 'react-hot-toast';
 
 function Settings() {
@@ -24,7 +24,7 @@ function Settings() {
 
     setUploading(true);
     try {
-      const response = await axios.post('/api/upload-excel', formData, {
+      const response = await api.post('/upload-excel', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         },
@@ -51,7 +51,7 @@ function Settings() {
 
     setClearing(true);
     try {
-      const response = await axios.delete('/api/clear-database');
+      const response = await api.delete('/clear-database');
       toast.success(`Base de dados limpa! ${response.data.excel_deleted} registros Excel e ${response.data.control_deleted} controles removidos.`);
       setShowClearModal(false);
       setConfirmText('');

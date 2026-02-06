@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import toast from 'react-hot-toast';
 
 function Communication() {
@@ -14,8 +14,8 @@ function Communication() {
   const loadMessage = async () => {
     setLoading(true);
     try {
-      const endpoint = messageType === 'detailed' ? '/api/message-detailed' : '/api/message';
-      const response = await axios.get(endpoint);
+      const endpoint = messageType === 'detailed' ? '/message-detailed' : '/message';
+      const response = await api.get(endpoint);
       setMessage(response.data.message || '');
       setLoading(false);
     } catch (error) {

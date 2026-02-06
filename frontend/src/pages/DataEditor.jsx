@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 
@@ -162,7 +162,7 @@ function DataEditor() {
 
   const loadActivities = async () => {
     try {
-      const response = await axios.get('/api/activities');
+      const response = await api.get('/activities');
       setActivities(response.data.activities || []);
       setLoading(false);
     } catch (error) {
@@ -288,7 +288,7 @@ function DataEditor() {
 
     try {
       // Enviar apenas os campos editáveis
-      await axios.put('/api/activity', {
+      await api.put('/activity', {
         seq: selectedActivity.seq,
         sequencia: selectedActivity.sequencia,
         excel_data_id: selectedActivity.excel_data_id || null,
@@ -318,7 +318,7 @@ function DataEditor() {
     if (!selectedActivity) return;
 
     try {
-      await axios.delete('/api/activity', {
+      await api.delete('/activity', {
         data: {
           seq: selectedActivity.seq,
           sequencia: selectedActivity.sequencia,

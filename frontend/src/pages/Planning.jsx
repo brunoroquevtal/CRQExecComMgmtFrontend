@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { toast } from 'react-hot-toast';
 import GanttChart from '../components/GanttChart';
 
@@ -23,7 +23,7 @@ function Planning() {
 
   const loadActivities = async () => {
     try {
-      const response = await axios.get('/api/activities');
+      const response = await api.get('/activities');
       setActivities(response.data.activities || []);
       setLoading(false);
     } catch (error) {

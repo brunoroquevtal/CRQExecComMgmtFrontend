@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
 
@@ -48,7 +48,7 @@ function Dashboard() {
 
   const loadData = async () => {
     try {
-      const statsRes = await axios.get('/api/statistics');
+      const statsRes = await api.get('/statistics');
       setStatistics(statsRes.data);
       setLoading(false);
     } catch (error) {

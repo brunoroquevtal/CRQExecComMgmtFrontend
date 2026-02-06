@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { format, parseISO, addHours, addMinutes, startOfDay, differenceInHours, differenceInMinutes } from 'date-fns';
-import axios from 'axios';
+import api from '../utils/api';
 
 const GanttChart = ({ activities, activeTab = 'all' }) => {
   const [rollbackStates, setRollbackStates] = useState({});
@@ -22,7 +22,7 @@ const GanttChart = ({ activities, activeTab = 'all' }) => {
   useEffect(() => {
     const fetchRollbackStates = async () => {
       try {
-        const response = await axios.get('/api/rollback-states');
+        const response = await api.get('/rollback-states');
         const states = {};
         if (response.data && Array.isArray(response.data)) {
           response.data.forEach(state => {
