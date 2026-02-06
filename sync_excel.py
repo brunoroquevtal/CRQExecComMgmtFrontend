@@ -70,6 +70,12 @@ logger = logging.getLogger(__name__)
 # Para desenvolvimento local, defina: export API_BASE_URL=http://localhost:3000
 API_BASE_URL = os.getenv("API_BASE_URL", "https://crqcommunidationbackend.netlify.app/.netlify/functions/api")
 
+# Verificação SSL (pode ser desabilitada em ambientes corporativos com proxy)
+# Defina SSL_VERIFY=false ou DISABLE_SSL_VERIFY=true para desabilitar
+SSL_VERIFY = os.getenv("SSL_VERIFY", "true").lower() not in ("false", "0", "no", "off")
+if os.getenv("DISABLE_SSL_VERIFY", "").lower() in ("true", "1", "yes", "on"):
+    SSL_VERIFY = False
+
 # Mapeamento de sequências conhecidas
 SEQUENCIAS = {
     "REDE": "REDE",
@@ -100,21 +106,41 @@ def make_api_request(method: str, endpoint: str, json_data: Optional[Dict] = Non
     """
     url = f"{API_BASE_URL}{endpoint}"
     
+    # Configuração de SSL
+    verify_ssl = SSL_VERIFY
+    if not verify_ssl:
+        import urllib3
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        logger.warning("AVISO: Verificação SSL desabilitada. Use apenas em ambientes confiáveis!")
+    
     for attempt in range(retry_count + 1):
         try:
             if method.upper() == 'GET':
-                response = requests.get(url, timeout=timeout)
+                response = requests.get(url, timeout=timeout, verify=verify_ssl)
             elif method.upper() == 'POST':
-                response = requests.post(url, json=json_data, timeout=timeout)
+                response = requests.post(url, json=json_data, timeout=timeout, verify=verify_ssl)
             elif method.upper() == 'PUT':
-                response = requests.put(url, json=json_data, timeout=timeout)
+                response = requests.put(url, json=json_data, timeout=timeout, verify=verify_ssl)
             elif method.upper() == 'DELETE':
-                response = requests.delete(url, json=json_data, timeout=timeout)
+                response = requests.delete(url, json=json_data, timeout=timeout, verify=verify_ssl)
             else:
                 raise ValueError(f"Método HTTP não suportado: {method}")
             
             response.raise_for_status()
             return response
+            
+        except requests.exceptions.SSLError as e:
+            error_msg = str(e)
+            if "CERTIFICATE_VERIFY_FAILED" in error_msg or "self-signed" in error_msg.lower():
+                logger.error(f"Erro de certificado SSL em {method} {url}")
+                logger.error("Este erro geralmente ocorre em ambientes corporativos com proxy/firewall.")
+                logger.error("Solução: Defina a variável de ambiente DISABLE_SSL_VERIFY=true")
+                logger.error("Exemplo (PowerShell): $env:DISABLE_SSL_VERIFY='true'")
+                logger.error("Exemplo (CMD): set DISABLE_SSL_VERIFY=true")
+                logger.error("Exemplo (Linux/Mac): export DISABLE_SSL_VERIFY=true")
+            else:
+                logger.error(f"Erro SSL em {method} {url}: {e}")
+            return None
             
         except requests.exceptions.Timeout:
             logger.warning(f"Timeout em {method} {url} (tentativa {attempt + 1}/{retry_count + 1})")
