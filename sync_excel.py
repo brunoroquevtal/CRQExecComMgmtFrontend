@@ -118,9 +118,15 @@ def make_api_request(method: str, endpoint: str, json_data: Optional[Dict] = Non
     # Configuração de SSL
     verify_ssl = SSL_VERIFY
     if not verify_ssl:
-        import urllib3
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-        logger.warning("AVISO: Verificação SSL desabilitada. Use apenas em ambientes confiáveis!")
+        try:
+            import urllib3
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        except ImportError:
+            pass
+        # Log apenas uma vez no início, não a cada requisição
+        if not hasattr(make_api_request, '_ssl_warning_logged'):
+            logger.warning("AVISO: Verificação SSL desabilitada. Use apenas em ambientes confiáveis!")
+            make_api_request._ssl_warning_logged = True
     
     for attempt in range(retry_count + 1):
         try:
@@ -1018,6 +1024,7 @@ def main():
     logger.info("=" * 60)
     logger.info("Iniciando sincronização de atividades do Excel")
     logger.info(f"API: {API_BASE_URL}")
+    logger.info(f"SSL Verification: {'DESABILITADO' if not SSL_VERIFY else 'HABILITADO'}")
     logger.info(f"Modo: {'BULK (lote)' if use_bulk_mode else 'INDIVIDUAL (uma por vez)'}")
     logger.info("=" * 60)
     
