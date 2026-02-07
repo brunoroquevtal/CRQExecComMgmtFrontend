@@ -99,6 +99,10 @@ function DataEditor() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   
+  // Ordenação
+  const [sortBy, setSortBy] = useState('seq'); // seq, sequencia, atividade, grupo, tempo, status, inicio, fim
+  const [sortOrder, setSortOrder] = useState('asc'); // asc, desc
+  
   // Paginação
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
@@ -128,10 +132,10 @@ function DataEditor() {
   // Calcular total de páginas
   const totalPages = Math.ceil(filteredActivities.length / itemsPerPage);
   
-  // Resetar para primeira página quando filtros mudarem
+  // Resetar para primeira página quando filtros ou ordenação mudarem
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, filterStatus, searchTerm]);
+  }, [activeTab, filterStatus, searchTerm, sortBy, sortOrder]);
 
   // Estados dos modais
   const [showEditModal, setShowEditModal] = useState(false);
@@ -158,7 +162,7 @@ function DataEditor() {
 
   useEffect(() => {
     filterActivities();
-  }, [activities, activeTab, filterStatus, searchTerm]);
+  }, [activities, activeTab, filterStatus, searchTerm, sortBy, sortOrder]);
 
   const loadActivities = async () => {
     try {
@@ -184,6 +188,25 @@ function DataEditor() {
     }
   };
 
+  // Função para parsear data
+  const parseDate = (dateValue) => {
+    if (!dateValue) return null;
+    if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
+      return dateValue;
+    }
+    if (typeof dateValue === 'string') {
+      try {
+        const date = new Date(dateValue);
+        if (!isNaN(date.getTime())) {
+          return date;
+        }
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  };
+
   const filterActivities = () => {
     let filtered = [...activities];
 
@@ -202,9 +225,62 @@ function DataEditor() {
       const lowerTerm = searchTerm.toLowerCase();
       filtered = filtered.filter(a =>
         a.atividade.toLowerCase().includes(lowerTerm) ||
-        (a.grupo && a.grupo.toLowerCase().includes(lowerTerm))
+        (a.grupo && a.grupo.toLowerCase().includes(lowerTerm)) ||
+        (a.sequencia && a.sequencia.toLowerCase().includes(lowerTerm)) ||
+        String(a.seq || '').includes(lowerTerm)
       );
     }
+
+    // Ordenação
+    filtered.sort((a, b) => {
+      let aValue, bValue;
+
+      switch (sortBy) {
+        case 'seq':
+          aValue = a.seq || 0;
+          bValue = b.seq || 0;
+          break;
+        case 'sequencia':
+          aValue = (a.sequencia || '').toLowerCase();
+          bValue = (b.sequencia || '').toLowerCase();
+          break;
+        case 'atividade':
+          aValue = (a.atividade || '').toLowerCase();
+          bValue = (b.atividade || '').toLowerCase();
+          break;
+        case 'grupo':
+          aValue = (a.grupo || '').toLowerCase();
+          bValue = (b.grupo || '').toLowerCase();
+          break;
+        case 'tempo':
+          aValue = a.tempo || 0;
+          bValue = b.tempo || 0;
+          break;
+        case 'status':
+          aValue = (a.status || '').toLowerCase();
+          bValue = (b.status || '').toLowerCase();
+          break;
+        case 'inicio':
+          aValue = parseDate(a.inicio)?.getTime() || 0;
+          bValue = parseDate(b.inicio)?.getTime() || 0;
+          break;
+        case 'fim':
+          aValue = parseDate(a.fim)?.getTime() || 0;
+          bValue = parseDate(b.fim)?.getTime() || 0;
+          break;
+        default:
+          aValue = a.seq || 0;
+          bValue = b.seq || 0;
+      }
+
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+      } else {
+        if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      }
+    });
 
     setFilteredActivities(filtered);
   };
@@ -438,13 +514,121 @@ function DataEditor() {
             <thead className="bg-vtal-gray-50">
               <tr>
                 {activeTab === 'all' && (
-                  <th rowSpan={2} className="px-3 py-2 text-center text-[10px] font-bold text-vtal-gray-600 uppercase align-top">CRQ</th>
+                  <th 
+                    rowSpan={2} 
+                    className="px-3 py-2 text-center text-[10px] font-bold text-vtal-gray-600 uppercase align-top cursor-pointer hover:bg-vtal-gray-100 transition-colors"
+                    onClick={() => {
+                      if (sortBy === 'sequencia') {
+                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                      } else {
+                        setSortBy('sequencia');
+                        setSortOrder('asc');
+                      }
+                    }}
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      CRQ
+                      {sortBy === 'sequencia' && (
+                        <span className="text-vtal-secondary">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </th>
                 )}
-                <th rowSpan={2} className="px-3 py-2 text-center text-[10px] font-bold text-vtal-gray-600 uppercase align-top">Seq</th>
-                <th rowSpan={2} className="px-4 py-2 text-left text-[10px] font-bold text-vtal-gray-600 uppercase w-1/3 align-top">Atividade</th>
-                <th rowSpan={2} className="px-3 py-2 text-center text-[10px] font-bold text-vtal-gray-600 uppercase align-top">Grupo</th>
-                <th rowSpan={2} className="px-3 py-2 text-center text-[10px] font-bold text-vtal-gray-600 uppercase align-top">Tempo</th>
-                <th rowSpan={2} className="px-3 py-2 text-center text-[10px] font-bold text-vtal-gray-600 uppercase align-top">Status</th>
+                <th 
+                  rowSpan={2} 
+                  className="px-3 py-2 text-center text-[10px] font-bold text-vtal-gray-600 uppercase align-top cursor-pointer hover:bg-vtal-gray-100 transition-colors"
+                  onClick={() => {
+                    if (sortBy === 'seq') {
+                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                    } else {
+                      setSortBy('seq');
+                      setSortOrder('asc');
+                    }
+                  }}
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    Seq
+                    {sortBy === 'seq' && (
+                      <span className="text-vtal-secondary">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </div>
+                </th>
+                <th 
+                  rowSpan={2} 
+                  className="px-4 py-2 text-left text-[10px] font-bold text-vtal-gray-600 uppercase w-1/3 align-top cursor-pointer hover:bg-vtal-gray-100 transition-colors"
+                  onClick={() => {
+                    if (sortBy === 'atividade') {
+                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                    } else {
+                      setSortBy('atividade');
+                      setSortOrder('asc');
+                    }
+                  }}
+                >
+                  <div className="flex items-center gap-1">
+                    Atividade
+                    {sortBy === 'atividade' && (
+                      <span className="text-vtal-secondary">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </div>
+                </th>
+                <th 
+                  rowSpan={2} 
+                  className="px-3 py-2 text-center text-[10px] font-bold text-vtal-gray-600 uppercase align-top cursor-pointer hover:bg-vtal-gray-100 transition-colors"
+                  onClick={() => {
+                    if (sortBy === 'grupo') {
+                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                    } else {
+                      setSortBy('grupo');
+                      setSortOrder('asc');
+                    }
+                  }}
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    Grupo
+                    {sortBy === 'grupo' && (
+                      <span className="text-vtal-secondary">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </div>
+                </th>
+                <th 
+                  rowSpan={2} 
+                  className="px-3 py-2 text-center text-[10px] font-bold text-vtal-gray-600 uppercase align-top cursor-pointer hover:bg-vtal-gray-100 transition-colors"
+                  onClick={() => {
+                    if (sortBy === 'tempo') {
+                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                    } else {
+                      setSortBy('tempo');
+                      setSortOrder('asc');
+                    }
+                  }}
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    Tempo
+                    {sortBy === 'tempo' && (
+                      <span className="text-vtal-secondary">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </div>
+                </th>
+                <th 
+                  rowSpan={2} 
+                  className="px-3 py-2 text-center text-[10px] font-bold text-vtal-gray-600 uppercase align-top cursor-pointer hover:bg-vtal-gray-100 transition-colors"
+                  onClick={() => {
+                    if (sortBy === 'status') {
+                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                    } else {
+                      setSortBy('status');
+                      setSortOrder('asc');
+                    }
+                  }}
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    Status
+                    {sortBy === 'status' && (
+                      <span className="text-vtal-secondary">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </div>
+                </th>
                 <th colSpan={2} className="px-3 py-2 text-center text-[10px] font-bold text-vtal-gray-600 uppercase border-x border-vtal-gray-300">Horário</th>
               </tr>
               <tr>
