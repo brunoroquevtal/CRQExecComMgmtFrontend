@@ -199,6 +199,70 @@ function Dashboard() {
   const atividadesAIniciarNoPrazo = getFilteredActivities('a iniciar no prazo');
   const atividadesAIniciarForaPrazo = getFilteredActivities('a iniciar fora do prazo');
 
+  // Função para parsear data
+  const parseDate = (dateValue) => {
+    if (!dateValue) return null;
+    if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
+      return dateValue;
+    }
+    if (typeof dateValue === 'string') {
+      try {
+        const date = new Date(dateValue);
+        if (!isNaN(date.getTime())) {
+          return date;
+        }
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  };
+
+  // Filtrar atividades "Em Atraso"
+  // Inclui: 
+  // 1. Em execução fora do prazo
+  // 2. A Iniciar fora do prazo
+  // 3. Ainda não iniciadas quando horário atual > início planejado (mesmo que status não indique atraso)
+  const atividadesEmAtraso = activities.filter(activity => {
+    // Excluir milestones
+    if (activity.is_milestone) return false;
+    
+    // Filtrar por CRQ se uma aba específica estiver selecionada
+    if (activeTab !== 'all' && activity.sequencia !== activeTab) {
+      return false;
+    }
+
+    const statusLower = (activity.status || '').toLowerCase();
+    const now = new Date();
+    
+    // 1. Em execução fora do prazo
+    if (statusLower.includes('em execução fora do prazo') || statusLower.includes('em execucao fora do prazo')) {
+      return true;
+    }
+    
+    // 2. A Iniciar fora do prazo
+    if (statusLower.includes('a iniciar fora do prazo')) {
+      return true;
+    }
+    
+    // 3. Ainda não iniciadas (horário atual > início planejado)
+    const inicioPlanejado = parseDate(activity.inicio);
+    if (inicioPlanejado && now > inicioPlanejado) {
+      // Verificar se não tem horário de início real (não foi iniciada)
+      const horarioInicioReal = parseDate(activity.horario_inicio_real);
+      if (!horarioInicioReal) {
+        // Não foi iniciada e já passou do horário planejado
+        return true;
+      }
+    }
+    
+    return false;
+  });
+
+  // Filtrar atividades "Em Andamento"
+  // Inclui: Em execução no prazo
+  const atividadesEmAndamento = getFilteredActivities('em execução no prazo');
+
   // Componente para renderizar lista de atividades
   const ActivityList = ({ activities, title, icon, borderColor, bgColor }) => {
     if (activities.length === 0) {
@@ -251,12 +315,35 @@ function Dashboard() {
                           {activity.grupo}
                         </p>
                       )}
-                      <div className="flex items-center gap-4 mt-2 text-xs text-vtal-gray-600">
+                      <div className="flex items-center gap-4 mt-2 text-xs text-vtal-gray-600 flex-wrap">
                         {activity.inicio && (
-                          <span>Início: {activity.inicio}</span>
+                          <span>Início Planejado: {new Date(activity.inicio).toLocaleString('pt-BR', { 
+                            day: '2-digit', 
+                            month: '2-digit', 
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}</span>
                         )}
                         {activity.fim && (
-                          <span>Fim: {activity.fim}</span>
+                          <span>Fim Planejado: {new Date(activity.fim).toLocaleString('pt-BR', { 
+                            day: '2-digit', 
+                            month: '2-digit', 
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}</span>
+                        )}
+                        {activity.horario_inicio_real && (
+                          <span className="text-green-600 font-semibold">
+                            Início Real: {new Date(activity.horario_inicio_real).toLocaleString('pt-BR', { 
+                              day: '2-digit', 
+                              month: '2-digit', 
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -446,6 +533,33 @@ function Dashboard() {
               Nenhum dado disponível para exibir
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Seções: Em Atraso e Em Andamento */}
+      <div className="space-y-4 md:space-y-6">
+        <h2 className="text-xl md:text-2xl font-display font-bold text-vtal-gray-800">
+          ⚠️ Atividades em Atraso e Em Andamento
+        </h2>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          {/* Em Atraso */}
+          <ActivityList
+            activities={atividadesEmAtraso}
+            title="Em Atraso"
+            icon="🔴"
+            borderColor="border-red-600"
+            bgColor="bg-red-50 border-red-200"
+          />
+
+          {/* Em Andamento */}
+          <ActivityList
+            activities={atividadesEmAndamento}
+            title="Em Andamento"
+            icon="⏳"
+            borderColor="border-blue-600"
+            bgColor="bg-blue-50 border-blue-200"
+          />
         </div>
       </div>
 
