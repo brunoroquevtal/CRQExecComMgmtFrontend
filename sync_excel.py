@@ -13,6 +13,11 @@ Parâmetros:
     caminho_do_arquivo.xlsx: Caminho do arquivo Excel (opcional)
         Se não fornecido, o script solicitará interativamente.
 
+Configuração:
+    O script usa o endpoint da API: https://crqcommunidationbackend.netlify.app/
+    Você precisará informar apenas email e senha para autenticação.
+    A URL do Supabase não é mais necessária - ela está configurada no backend.
+
 Exemplos:
     python sync_excel.py --mode individual
     python sync_excel.py --mode bulk
@@ -70,6 +75,9 @@ logger = logging.getLogger(__name__)
 # Para desenvolvimento local, defina: export API_BASE_URL=http://localhost:3000
 API_BASE_URL = os.getenv("API_BASE_URL", "https://crqcommunidationbackend.netlify.app")
 
+# Token de autenticação (obtido automaticamente via login na API)
+API_AUTH_TOKEN = ""
+
 # Verificação SSL (pode ser desabilitada em ambientes corporativos com proxy)
 # Defina SSL_VERIFY=false ou DISABLE_SSL_VERIFY=true para desabilitar
 SSL_VERIFY_ENV = os.getenv("SSL_VERIFY", "").lower()
@@ -101,6 +109,147 @@ SEQUENCIAS = {
 }
 
 DATE_FORMAT = "%d/%m/%Y %H:%M:%S"
+
+
+def authenticate_with_api(email: str, password: str) -> Optional[str]:
+    """
+    Faz login na API usando email e senha e retorna o token de acesso.
+    
+    Args:
+        email: Email do usuário
+        password: Senha do usuário
+    
+    Returns:
+        str: Token de acesso (access_token) ou None se falhar
+    """
+    try:
+        # URL do endpoint de autenticação da API
+        auth_url = f"{API_BASE_URL}/api/auth/login"
+        
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        
+        payload = {
+            'email': email,
+            'password': password
+        }
+        
+        logger.info(f"Fazendo login na API: {auth_url}")
+        
+        # Teste de conectividade básico primeiro
+        try:
+            test_response = requests.get(f"{API_BASE_URL}/health", timeout=5, verify=SSL_VERIFY)
+            logger.debug(f"Teste de conectividade - Status: {test_response.status_code}")
+        except Exception as test_error:
+            logger.warning(f"Não foi possível verificar conectividade com /health: {test_error}")
+            logger.info("Continuando com tentativa de login mesmo assim...")
+        
+        response = requests.post(
+            auth_url,
+            headers=headers,
+            json=payload,
+            timeout=30,
+            verify=SSL_VERIFY
+        )
+        
+        # Log da resposta para debug
+        logger.debug(f"Status HTTP: {response.status_code}")
+        logger.debug(f"Headers da resposta: {dict(response.headers)}")
+        
+        # Verificar se a resposta é HTML (página de erro do Netlify)
+        content_type = response.headers.get('Content-Type', '').lower()
+        if 'text/html' in content_type:
+            logger.error("A API retornou HTML em vez de JSON. Isso geralmente indica:")
+            logger.error("  1. O endpoint não existe ou não está configurado corretamente")
+            logger.error("  2. A URL da API pode estar incorreta")
+            logger.error(f"  3. Verifique se o endpoint /api/auth/login está disponível em: {API_BASE_URL}")
+            logger.error(f"Conteúdo da resposta (primeiros 500 caracteres): {response.text[:500]}")
+            return None
+        
+        # Tentar fazer parse do JSON apenas se o status for 200
+        if response.status_code == 200:
+            try:
+                data = response.json()
+                access_token = data.get('access_token')
+                if access_token:
+                    logger.info("Login realizado com sucesso! Token obtido.")
+                    return access_token
+                else:
+                    logger.error("Login bem-sucedido mas token não encontrado na resposta.")
+                    logger.debug(f"Resposta completa: {data}")
+                    return None
+            except ValueError as json_error:
+                # Resposta não é JSON válido
+                logger.error(f"Resposta não é JSON válido: {json_error}")
+                logger.error(f"Content-Type: {content_type}")
+                logger.error(f"Conteúdo da resposta (primeiros 500 caracteres): {response.text[:500]}")
+                logger.error("Verifique se a API está configurada corretamente.")
+                logger.error(f"URL tentada: {auth_url}")
+                return None
+        else:
+            # Para outros status codes, tentar parse do JSON com tratamento de erro
+            error_text = "Sem resposta"
+            try:
+                if response.text:
+                    # Verificar se o Content-Type indica JSON antes de tentar fazer parse
+                    if 'application/json' in content_type or response.text.strip().startswith('{'):
+                        try:
+                            error_data = response.json()
+                            error_text = error_data.get('error', response.text[:500])
+                        except (ValueError, AttributeError) as json_err:
+                            # Se falhar ao fazer parse do JSON, usar texto bruto
+                            error_text = response.text[:500] if response.text else f"HTTP {response.status_code} - Resposta não é JSON válido"
+                            logger.debug(f"Erro ao fazer parse do JSON de erro: {json_err}")
+                    else:
+                        # Não é JSON, usar texto bruto
+                        error_text = response.text[:500] if response.text else f"HTTP {response.status_code} - Resposta não é JSON"
+                else:
+                    error_text = f"HTTP {response.status_code} - Sem conteúdo na resposta"
+            except Exception as parse_error:
+                # Se não conseguir fazer parse, usar o texto bruto
+                error_text = response.text[:500] if response.text else f"HTTP {response.status_code} - Erro ao processar resposta: {parse_error}"
+            
+            logger.error(f"Erro ao fazer login na API: HTTP {response.status_code}")
+            logger.error(f"Detalhes: {error_text}")
+            
+            # Log adicional para debug
+            if response.text:
+                logger.debug(f"Resposta completa: {response.text[:1000]}")
+            
+            if response.status_code == 401:
+                if "incorretos" in error_text.lower() or "invalid" in error_text.lower():
+                    logger.error("Email ou senha incorretos.")
+                elif "não confirmado" in error_text.lower() or "not confirmed" in error_text.lower():
+                    logger.error("Email não confirmado. Verifique sua caixa de entrada e confirme o email.")
+            elif response.status_code == 404:
+                logger.error(f"Endpoint não encontrado. Verifique se a URL da API está correta: {API_BASE_URL}")
+                logger.error("O endpoint /api/auth/login pode não estar disponível.")
+            elif response.status_code == 503:
+                logger.error("Serviço indisponível. O Supabase pode não estar configurado no backend.")
+            
+            return None
+            
+    except requests.exceptions.SSLError as e:
+        logger.error(f"Erro SSL ao fazer login na API: {e}")
+        logger.error("Se estiver em ambiente corporativo, tente definir: DISABLE_SSL_VERIFY=true")
+        return None
+    except requests.exceptions.ConnectionError as e:
+        logger.error(f"Erro de conexão ao fazer login na API: {e}")
+        logger.error(f"Verifique se a API está acessível em: {API_BASE_URL}")
+        logger.error("Verifique sua conexão com a internet ou se a API está rodando.")
+        return None
+    except requests.exceptions.Timeout as e:
+        logger.error(f"Timeout ao fazer login na API: {e}")
+        logger.error("A API demorou muito para responder. Tente novamente.")
+        return None
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Erro de requisição ao fazer login na API: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Erro inesperado ao fazer login na API: {e}")
+        logger.exception("Detalhes do erro:")
+        return None
 
 
 def signal_handler(sig, frame):
@@ -151,6 +300,16 @@ def make_api_request(method: str, endpoint: str, json_data: Optional[Dict] = Non
         'Accept': 'application/json'
     }
     
+    # Adicionar token de autenticação se disponível
+    if API_AUTH_TOKEN:
+        headers['Authorization'] = f'Bearer {API_AUTH_TOKEN}'
+    else:
+            # Avisar apenas uma vez que o token não está configurado
+        if not hasattr(make_api_request, '_token_warning_logged'):
+            logger.warning("AVISO: API_AUTH_TOKEN não configurado. Requisições podem falhar com erro 401 (não autorizado).")
+            logger.warning("Execute o script novamente e informe email e senha para autenticação.")
+            make_api_request._token_warning_logged = True
+    
     for attempt in range(retry_count + 1):
         try:
             if method.upper() == 'GET':
@@ -194,10 +353,17 @@ def make_api_request(method: str, endpoint: str, json_data: Optional[Dict] = Non
                 
         except requests.exceptions.HTTPError as e:
             error_text = e.response.text[:500] if e.response else "Sem resposta"
-            logger.error(f"Erro HTTP {e.response.status_code} em {method} {url}: {error_text}")
+            status_code = e.response.status_code if e.response else 'N/A'
+            logger.error(f"Erro HTTP {status_code} em {method} {url}: {error_text}")
+            
+            # Se for erro 401 (não autorizado), avisar sobre token
+            if status_code == 401:
+                logger.error("ERRO 401: Não autorizado - Token de autenticação necessário!")
+                logger.error("Execute o script novamente e informe email e senha para autenticação.")
+                return None
             
             # Se for erro 500 com "Invalid API key", pode ser problema do Netlify
-            if e.response.status_code == 500 and "Invalid API key" in error_text:
+            if status_code == 500 and "Invalid API key" in error_text:
                 logger.error("ERRO: 'Invalid API key' - Isso pode indicar:")
                 logger.error("  1. Problema de configuração no Netlify Functions")
                 logger.error("  2. Backend esperando autenticação que não foi configurada")
@@ -1071,6 +1237,38 @@ def main():
         print("  npm start")
         sys.exit(1)
     print("[OK] Conexao com API estabelecida!\n")
+    
+    # Autenticação: solicitar apenas email e senha
+    global API_AUTH_TOKEN
+    
+    print("=" * 60)
+    print("AUTENTICACAO")
+    print("=" * 60)
+    email = input("Email: ").strip()
+    if not email:
+        print("[ERRO] Email não pode estar vazio.")
+        sys.exit(1)
+    
+    # Usar getpass para ocultar a senha
+    try:
+        import getpass
+        password = getpass.getpass("Senha: ")
+    except ImportError:
+        # Fallback se getpass não estiver disponível
+        password = input("Senha: ").strip()
+    
+    if not password:
+        print("[ERRO] Senha não pode estar vazia.")
+        sys.exit(1)
+    
+    print("\nAutenticando com a API...")
+    token = authenticate_with_api(email, password)
+    if token:
+        API_AUTH_TOKEN = token
+        print("[OK] Autenticacao realizada com sucesso!\n")
+    else:
+        print("[ERRO] Falha na autenticacao. Verifique email e senha.")
+        sys.exit(1)
     
     if args.excel_path:
         excel_path = args.excel_path

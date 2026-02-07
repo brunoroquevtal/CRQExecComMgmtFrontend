@@ -21,7 +21,7 @@ pip install pandas openpyxl requests
 O script usa a API Node.js no Netlify por padrão (produção).
 
 **URL padrão (produção):**
-- `https://crqcommunidationbackend.netlify.app/.netlify/functions/api`
+- `https://crqcommunidationbackend.netlify.app`
 
 **Para desenvolvimento local**, defina a variável de ambiente:
 
@@ -39,6 +39,46 @@ set API_BASE_URL=http://localhost:3000
 ```bash
 export API_BASE_URL=http://localhost:3000
 ```
+
+### 🔐 Autenticação (OBRIGATÓRIO)
+
+O backend requer autenticação para atualizar atividades. O script solicitará todas as informações necessárias quando for executado.
+
+**Ao executar o script:**
+
+O script solicitará interativamente:
+1. **URL do Supabase**: URL do seu projeto Supabase (ex: `https://xxxxx.supabase.co`)
+2. **Chave anônima do Supabase**: Chave anônima encontrada em Settings > API do Supabase
+3. **Email**: Seu email de login
+4. **Senha**: Sua senha (a senha será ocultada durante a digitação)
+
+**Opção: Configurar via variáveis de ambiente (opcional)**
+
+Se preferir, você pode configurar URL e chave anônima via variáveis de ambiente para não precisar digitar toda vez:
+
+**Windows PowerShell:**
+```powershell
+$env:SUPABASE_URL="https://seu-projeto.supabase.co"
+$env:SUPABASE_ANON_KEY="sua_chave_anonima_aqui"
+```
+
+**Windows CMD:**
+```cmd
+set SUPABASE_URL=https://seu-projeto.supabase.co
+set SUPABASE_ANON_KEY=sua_chave_anonima_aqui
+```
+
+**Linux/Mac:**
+```bash
+export SUPABASE_URL="https://seu-projeto.supabase.co"
+export SUPABASE_ANON_KEY="sua_chave_anonima_aqui"
+```
+
+Se configurar via variáveis de ambiente, o script só solicitará email e senha.
+
+**⚠️ IMPORTANTE:** 
+- Use as mesmas credenciais que você usa para fazer login no frontend
+- A senha será ocultada durante a digitação por segurança
 
 ## 📖 Uso
 

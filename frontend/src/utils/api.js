@@ -1,10 +1,12 @@
 import axios from 'axios';
-import supabase from './supabase';
 
 // URL base da API - usa variável de ambiente ou padrão relativo
 // Se VITE_API_URL não estiver definida, usa '/api' (proxy do Vite em desenvolvimento)
 // Em produção, defina VITE_API_URL com a URL completa do backend
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+
+// Chave para armazenar token no localStorage
+const TOKEN_KEY = 'auth_token';
 
 // Criar instância do axios com configuração base
 const api = axios.create({
@@ -23,16 +25,14 @@ api.interceptors.request.use(
       delete config.headers['Content-Type'];
     }
 
-    // Adicionar token de autenticação se disponível
-    if (supabase) {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.access_token) {
-          config.headers.Authorization = `Bearer ${session.access_token}`;
-        }
-      } catch (error) {
-        console.warn('Erro ao obter token:', error);
+    // Adicionar token de autenticação se disponível no localStorage
+    try {
+      const token = localStorage.getItem(TOKEN_KEY);
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
       }
+    } catch (error) {
+      console.warn('Erro ao obter token do localStorage:', error);
     }
 
     return config;
@@ -46,6 +46,18 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Se erro 401 (não autorizado), limpar token e redirecionar para login
+    if (error.response?.status === 401) {
+      // Remover token inválido
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem('auth_user');
+      
+      // Redirecionar para login apenas se não estiver já na página de login
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/signup') {
+        window.location.href = '/login';
+      }
+    }
+    
     // Não logar erros 404 para endpoints opcionais (como /auth/allowed-domains)
     // Apenas logar em modo debug ou para outros status codes
     if (error.response) {

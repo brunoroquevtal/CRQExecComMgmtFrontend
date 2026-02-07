@@ -6,6 +6,10 @@ import supabase from '../utils/supabase';
 
 const AuthContext = createContext();
 
+// Chave para armazenar token no localStorage
+const TOKEN_KEY = 'auth_token';
+const USER_KEY = 'auth_user';
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -22,60 +26,39 @@ export function AuthProvider({ children }) {
 
   // Verificar sessão ao carregar
   useEffect(() => {
-    if (!supabase) {
-      // Se Supabase não estiver configurado, permitir acesso sem autenticação
-      // (modo de desenvolvimento ou quando autenticação não é necessária)
+    const token = localStorage.getItem(TOKEN_KEY);
+    const storedUser = localStorage.getItem(USER_KEY);
+
+    if (token && storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+        // Carregar perfil do backend
+        loadUserProfile();
+      } catch (error) {
+        console.error('Erro ao restaurar sessão:', error);
+        // Limpar dados inválidos
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
+        setLoading(false);
+      }
+    } else {
       setLoading(false);
-      setIsAuthenticated(true); // Permitir acesso sem autenticação
-      // Não definir perfil - a aplicação funcionará sem roles específicas
-      return;
     }
-
-    // Verificar sessão atual
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setUser(session.user);
-        loadUserProfile(session.user.id);
-      } else {
-        setLoading(false);
-      }
-    });
-
-    // Escutar mudanças de autenticação
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        setUser(session.user);
-        loadUserProfile(session.user.id);
-      } else {
-        setUser(null);
-        setProfile(null);
-        setIsAuthenticated(false);
-        setLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
   }, []);
 
   // Carregar perfil do usuário via API do backend
-  const loadUserProfile = async (userId) => {
+  const loadUserProfile = async () => {
     try {
-      // Obter sessão do Supabase para pegar o token
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const token = localStorage.getItem(TOKEN_KEY);
+      if (!token) {
         setLoading(false);
         return;
       }
 
       // Buscar perfil via API do backend
       try {
-        const response = await api.get('/auth/profile', {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`
-          }
-        });
+        const response = await api.get('/auth/profile');
 
         // Perfil obtido com sucesso do backend
         setProfile(response.data);
@@ -89,89 +72,112 @@ export function AuthProvider({ children }) {
           return;
         }
 
-        // Se erro 404 ou 500, usar perfil padrão baseado nos dados do Supabase Auth
+        // Se erro 404 ou 500, usar perfil padrão baseado nos dados do usuário armazenado
         if (profileError.response?.status === 404 || profileError.response?.status === 500) {
           console.warn('Endpoint /api/auth/profile não disponível. Usando perfil padrão.');
-          const defaultProfile = {
-            id: session.user.id,
-            email: session.user.email,
-            full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
-            role: 'visualizador'
-          };
-          setProfile(defaultProfile);
-          setIsAuthenticated(true);
-          setLoading(false);
-          return;
+          const storedUser = localStorage.getItem(USER_KEY);
+          if (storedUser) {
+            try {
+              const userData = JSON.parse(storedUser);
+              const defaultProfile = {
+                id: userData.id,
+                email: userData.email,
+                full_name: userData.email?.split('@')[0] || 'Usuário',
+                role: 'visualizador'
+              };
+              setProfile(defaultProfile);
+              setIsAuthenticated(true);
+              setLoading(false);
+              return;
+            } catch (e) {
+              // Ignorar erro de parse
+            }
+          }
         }
 
         // Outro erro - usar perfil padrão
         console.error('Erro ao carregar perfil do backend:', profileError.message);
-        const defaultProfile = {
-          id: session.user.id,
-          email: session.user.email,
-          full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
-          role: 'visualizador'
-        };
-        setProfile(defaultProfile);
-        setIsAuthenticated(true);
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar perfil:', error);
-      // Em caso de erro, permitir acesso com perfil padrão se tiver sessão
-      if (supabase) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
+        const storedUser = localStorage.getItem(USER_KEY);
+        if (storedUser) {
+          try {
+            const userData = JSON.parse(storedUser);
             const defaultProfile = {
-              id: session.user.id,
-              email: session.user.email,
-              full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
+              id: userData.id,
+              email: userData.email,
+              full_name: userData.email?.split('@')[0] || 'Usuário',
               role: 'visualizador'
             };
             setProfile(defaultProfile);
             setIsAuthenticated(true);
+          } catch (e) {
+            // Ignorar erro
           }
-        } catch (sessionError) {
-          // Ignorar erro
         }
+        setLoading(false);
       }
+    } catch (error) {
+      console.error('Erro ao carregar perfil:', error);
       setLoading(false);
     }
   };
 
-  // Login com email e senha
+  // Login com email e senha via API do backend
   const login = async (email, password) => {
-    if (!supabase) {
-      toast.error('Autenticação não disponível. Configure o Supabase para usar login/senha.');
-      return false;
-    }
-
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const response = await api.post('/auth/login', {
         email,
         password,
       });
 
-      if (error) {
-        // Mensagens de erro mais amigáveis
-        let errorMessage = error.message;
-        if (error.message.includes('Invalid login credentials')) {
-          errorMessage = 'Email ou senha incorretos';
-        } else if (error.message.includes('Email not confirmed')) {
-          errorMessage = 'Por favor, confirme seu email antes de fazer login';
-        }
-        toast.error(errorMessage);
+      if (response.data.success && response.data.access_token) {
+        // Armazenar token e dados do usuário
+        const token = response.data.access_token;
+        const userData = response.data.user;
+
+        localStorage.setItem(TOKEN_KEY, token);
+        localStorage.setItem(USER_KEY, JSON.stringify(userData));
+
+        setUser(userData);
+        
+        // Carregar perfil do backend
+        await loadUserProfile();
+        
+        toast.success('Login realizado com sucesso!');
+        return true;
+      } else {
+        toast.error('Erro ao fazer login. Resposta inválida do servidor.');
         return false;
       }
-
-      setUser(data.user);
-      await loadUserProfile(data.user.id);
-      toast.success('Login realizado com sucesso!');
-      return true;
     } catch (error) {
       console.error('Erro ao fazer login:', error);
-      toast.error('Erro ao fazer login. Tente novamente.');
+      
+      // Mensagens de erro mais amigáveis
+      let errorMessage = 'Erro ao fazer login. Tente novamente.';
+      
+      if (error.response) {
+        const status = error.response.status;
+        const errorData = error.response.data;
+        
+        if (status === 401) {
+          if (errorData?.error) {
+            if (errorData.error.includes('incorretos') || errorData.error.includes('Invalid')) {
+              errorMessage = 'Email ou senha incorretos';
+            } else if (errorData.error.includes('não confirmado') || errorData.error.includes('not confirmed')) {
+              errorMessage = 'Por favor, confirme seu email antes de fazer login';
+            } else {
+              errorMessage = errorData.error;
+            }
+          } else {
+            errorMessage = 'Email ou senha incorretos';
+          }
+        } else if (status === 503) {
+          errorMessage = 'Serviço de autenticação indisponível. Tente novamente mais tarde.';
+        } else if (errorData?.error) {
+          errorMessage = errorData.error;
+        }
+      }
+      
+      toast.error(errorMessage);
       return false;
     }
   };
@@ -235,16 +241,11 @@ export function AuthProvider({ children }) {
 
   // Logout
   const logout = async () => {
-    if (!supabase) {
-      setUser(null);
-      setProfile(null);
-      setIsAuthenticated(false);
-      navigate('/login');
-      return;
-    }
-
     try {
-      await supabase.auth.signOut();
+      // Limpar dados do localStorage
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+      
       setUser(null);
       setProfile(null);
       setIsAuthenticated(false);
@@ -253,6 +254,8 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
       // Mesmo com erro, limpar estado local
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
       setUser(null);
       setProfile(null);
       setIsAuthenticated(false);
@@ -262,13 +265,13 @@ export function AuthProvider({ children }) {
 
   // Obter token de acesso
   const getAccessToken = async () => {
-    if (!supabase || !user) {
+    if (!user) {
       return null;
     }
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      return session?.access_token || null;
+      const token = localStorage.getItem(TOKEN_KEY);
+      return token || null;
     } catch (error) {
       console.error('Erro ao obter token:', error);
       return null;
@@ -277,9 +280,6 @@ export function AuthProvider({ children }) {
 
   // Verificar se usuário tem role específica
   const hasRole = (requiredRole) => {
-    // Se Supabase não estiver configurado, permitir acesso (modo desenvolvimento)
-    if (!supabase) return true;
-    
     if (!profile) return false;
     
     // Administrador tem acesso a tudo
@@ -291,9 +291,6 @@ export function AuthProvider({ children }) {
 
   // Verificar se usuário tem uma das roles
   const hasAnyRole = (requiredRoles) => {
-    // Se Supabase não estiver configurado, permitir acesso (modo desenvolvimento)
-    if (!supabase) return true;
-    
     if (!profile) return false;
     if (profile.role === 'administrador') return true;
     return requiredRoles.includes(profile.role);
@@ -302,7 +299,7 @@ export function AuthProvider({ children }) {
   // Função para recarregar o perfil (útil após alterações)
   const reloadProfile = async () => {
     if (user?.id) {
-      await loadUserProfile(user.id);
+      await loadUserProfile();
     }
   };
 

@@ -1,12 +1,16 @@
 [build]
   base = "frontend"
   # Não atualizar submodules - o backend não é necessário para o build do frontend
+  # O backend é um repositório separado e não precisa ser clonado durante o deploy
   command = "npm ci && npm run build"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "20"
   NPM_CONFIG_PRODUCTION = "false"
+  # Desabilitar atualização automática de submodules durante o build
+  # O backend pode ser commitado via este projeto, mas não é necessário para o deploy do frontend
+  GIT_SUBMODULE_UPDATE = "false"
   # Configurar secrets scanning para ignorar variáveis VITE_* (são públicas e esperadas no build)
   # Essas variáveis são substituídas pelo Vite no build e aparecem no código JavaScript gerado
   SECRETS_SCAN_OMIT_KEYS = "VITE_API_URL,VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY,API_BASE_URL"

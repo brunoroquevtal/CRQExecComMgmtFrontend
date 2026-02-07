@@ -64,8 +64,19 @@ desktop.ini
 .streamlit/secrets.toml
 
 # Backend (repositório separado - é um git submodule)
-# Não ignorar - o submodule será gerenciado pelo Git
-# O conteúdo do backend não será incluído no deploy do frontend
+# O backend pode ser commitado via este projeto, mas não é necessário para o build do frontend
+# O frontend se comunica com o backend via API HTTP
+# O backend deve ser deployado separadamente (ex: Netlify Functions, Railway, etc.)
+# 
+# Ignorar apenas arquivos temporários do backend, mas manter o diretório para commits
+backend/node_modules/
+backend/.env
+backend/.env.local
+backend/uploads/
+backend/*.db
+backend/*.log
+backend/dist/
+backend/build/
 
 # Node (Frontend)
 node_modules/
