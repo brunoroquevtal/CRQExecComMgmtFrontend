@@ -308,6 +308,43 @@ const GanttChart = ({ activities, activeTab = 'all' }) => {
 
   const currentTimePosition = getCurrentTimePosition();
 
+  // Calcular a hora atual (arredondada para baixo) para destacar atividades
+  const getCurrentHour = () => {
+    if (!currentTime) return null;
+    const currentHour = currentTime.getHours();
+    const currentMinute = currentTime.getMinutes();
+    // Se estamos em 14:30, queremos destacar atividades da coluna 14:00
+    // Então retornamos a hora cheia atual
+    return currentHour;
+  };
+
+  const currentHour = getCurrentHour();
+
+  // Verificar se uma atividade está na coluna do horário atual
+  const isActivityInCurrentHour = (activity) => {
+    if (!currentHour || !activity.inicio) return false;
+    
+    try {
+      const inicio = parseDate(activity.inicio);
+      if (!inicio || isNaN(inicio.getTime())) return false;
+      
+      const activityHour = inicio.getHours();
+      // Verificar se a atividade começa na hora atual (coluna atual)
+      // Ou se está em execução durante a hora atual
+      const activityStartHour = inicio.getHours();
+      const fim = parseDate(activity.fim);
+      const activityEndHour = fim ? fim.getHours() : activityStartHour;
+      
+      // Atividade está na coluna atual se:
+      // 1. Começa na hora atual, OU
+      // 2. Está em execução durante a hora atual (começa antes e termina depois ou durante)
+      return activityStartHour === currentHour || 
+             (activityStartHour < currentHour && (activityEndHour >= currentHour || !fim));
+    } catch (e) {
+      return false;
+    }
+  };
+
   // Renderizar uma atividade como barra
   const renderActivityBar = (activity, rowIndex) => {
     const { leftPercent, widthPercent } = getBarPosition(activity);
@@ -317,6 +354,9 @@ const GanttChart = ({ activities, activeTab = 'all' }) => {
                        atividadeLower.includes('rollback') || 
                        atividadeLower.includes('atividade rollback');
     const isEncerramento = activity.is_encerramento;
+    
+    // Verificar se a atividade está na coluna do horário atual
+    const isInCurrentHour = isActivityInCurrentHour(activity);
     
     // Cores: rollback = vermelho escuro (sempre), principal = verde escuro, encerramento principal = azul
     // Prioridade: rollback > encerramento > principal
@@ -332,7 +372,22 @@ const GanttChart = ({ activities, activeTab = 'all' }) => {
       bgColor = '#065F46';
     }
     
+    // Se está na hora atual, clarear a cor para destacar
+    if (isInCurrentHour) {
+      if (isRollback) {
+        bgColor = '#DC2626'; // Vermelho mais claro
+      } else if (isEncerramento) {
+        bgColor = '#2563EB'; // Azul mais claro
+      } else {
+        bgColor = '#10B981'; // Verde mais claro
+      }
+    }
+    
     const borderColor = isRollback ? '#7F1D1D' : (isEncerramento ? '#0052A3' : '#064E3B');
+    // Borda mais destacada se está na hora atual
+    const finalBorderColor = isInCurrentHour 
+      ? (isRollback ? '#B91C1C' : (isEncerramento ? '#1D4ED8' : '#059669'))
+      : borderColor;
     const textColor = '#FFFFFF'; // texto branco para ambas para melhor legibilidade
     
     try {
@@ -392,12 +447,18 @@ const GanttChart = ({ activities, activeTab = 'all' }) => {
           }}
         >
           <div
-            className="h-full rounded px-1 flex items-center cursor-pointer transition-all hover:opacity-80 hover:z-10"
+            className={`h-full rounded px-1 flex items-center cursor-pointer transition-all hover:opacity-80 hover:z-10 ${
+              isInCurrentHour ? 'animate-pulse' : ''
+            }`}
             style={{
               backgroundColor: bgColor,
-              border: `1px solid ${borderColor}`,
-              boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-              color: textColor
+              border: `2px solid ${finalBorderColor}`,
+              boxShadow: isInCurrentHour 
+                ? '0 0 12px rgba(59, 130, 246, 0.6), 0 4px 8px rgba(0,0,0,0.2)' 
+                : '0 1px 2px rgba(0,0,0,0.1)',
+              color: textColor,
+              transform: isInCurrentHour ? 'scale(1.02)' : 'scale(1)',
+              zIndex: isInCurrentHour ? 15 : 1
             }}
             onMouseEnter={handleMouseEnter}
             onMouseMove={handleMouseMove}
@@ -461,18 +522,28 @@ const GanttChart = ({ activities, activeTab = 'all' }) => {
               
               if (!shouldShow) return null;
               
+              const intervalHour = interval.getHours();
+              const isCurrentHourColumn = minutes === 0 && intervalHour === currentHour;
+              
               return (
                 <div
                   key={index}
-                  className="absolute border-l border-vtal-gray-200 text-vtal-gray-600"
+                  className={`absolute border-l ${
+                    isCurrentHourColumn 
+                      ? 'border-blue-500 border-2 text-blue-700 font-bold' 
+                      : 'border-vtal-gray-200 text-vtal-gray-600'
+                  }`}
                   style={{
                     left: `${totalIntervals > 1 ? (index / (totalIntervals - 1)) * 100 : 0}%`,
                     paddingLeft: '2px',
                     paddingTop: '2px',
-                    fontSize: '8.4px' // 30% menor que text-xs (12px * 0.7 = 8.4px)
+                    fontSize: isCurrentHourColumn ? '10px' : '8.4px', // Maior se for a hora atual
+                    backgroundColor: isCurrentHourColumn ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                    zIndex: isCurrentHourColumn ? 10 : 1
                   }}
                 >
                   {format(interval, "HH'h'")}
+                  {isCurrentHourColumn && <span className="ml-1">⭐</span>}
                 </div>
               );
             })}
@@ -483,13 +554,23 @@ const GanttChart = ({ activities, activeTab = 'all' }) => {
               const minutes = interval.getMinutes();
               // Linha mais grossa para horas cheias, mais fina para intervalos de 15 minutos
               const isHour = minutes === 0;
+              const intervalHour = interval.getHours();
+              const isCurrentHourColumn = isHour && intervalHour === currentHour;
+              
               return (
                 <div
                   key={`line-${index}`}
-                  className={`absolute border-l ${isHour ? 'border-vtal-gray-300' : 'border-vtal-gray-100'}`}
+                  className={`absolute border-l ${
+                    isCurrentHourColumn 
+                      ? 'border-blue-500 border-2 bg-blue-50 bg-opacity-20' 
+                      : isHour 
+                        ? 'border-vtal-gray-300' 
+                        : 'border-vtal-gray-100'
+                  }`}
                   style={{
                     left: `${totalIntervals > 1 ? (index / (totalIntervals - 1)) * 100 : 0}%`,
-                    height: '100%'
+                    height: '100%',
+                    zIndex: isCurrentHourColumn ? 5 : 0
                   }}
                 />
               );
@@ -572,14 +653,25 @@ const GanttChart = ({ activities, activeTab = 'all' }) => {
                             if (index === 0) return null;
                             const minutes = interval.getMinutes();
                             const isHour = minutes === 0;
+                            const intervalHour = interval.getHours();
+                            // Destacar a coluna da hora atual
+                            const isCurrentHourColumn = isHour && intervalHour === currentHour;
+                            
                             return (
                               <div
                                 key={`grid-${index}`}
-                                className={`absolute border-l ${isHour ? 'border-vtal-gray-200' : 'border-vtal-gray-100'}`}
+                                className={`absolute border-l ${
+                                  isCurrentHourColumn 
+                                    ? 'border-blue-500 border-2 bg-blue-50 bg-opacity-30' 
+                                    : isHour 
+                                      ? 'border-vtal-gray-200' 
+                                      : 'border-vtal-gray-100'
+                                }`}
                                 style={{
                                   left: `${totalIntervals > 1 ? (index / (totalIntervals - 1)) * 100 : 0}%`,
                                   height: '100%',
-                                  top: 0
+                                  top: 0,
+                                  zIndex: isCurrentHourColumn ? 5 : 0
                                 }}
                               />
                             );
