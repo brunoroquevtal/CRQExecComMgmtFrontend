@@ -1,4 +1,5 @@
 import axios from 'axios';
+import supabase from './supabase';
 
 // URL base da API - usa variável de ambiente ou padrão relativo
 // Se VITE_API_URL não estiver definida, usa '/api' (proxy do Vite em desenvolvimento)
@@ -45,9 +46,14 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Não logar erros 404 para endpoints opcionais (como /auth/allowed-domains)
+    // Apenas logar em modo debug ou para outros status codes
     if (error.response) {
-      // Erro com resposta do servidor
-      console.error('Erro da API:', error.response.status, error.response.data);
+      const status = error.response.status;
+      // Logar apenas erros que não sejam 404 (endpoint não encontrado)
+      if (status !== 404) {
+        console.error('Erro da API:', status, error.response.data);
+      }
     } else if (error.request) {
       // Erro de rede (sem resposta)
       console.error('Erro de rede:', error.message);

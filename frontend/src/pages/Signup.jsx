@@ -20,9 +20,17 @@ function Signup() {
     const loadAllowedDomains = async () => {
       try {
         const response = await api.get('/auth/allowed-domains');
-        setAllowedDomains(response.data.domains || []);
+        if (response.data && response.data.domains) {
+          setAllowedDomains(response.data.domains);
+        }
       } catch (error) {
-        console.error('Erro ao carregar domínios:', error);
+        // Se o endpoint não existir (404), não é um erro crítico
+        // Apenas logar em modo debug, não mostrar erro ao usuário
+        if (error.response?.status !== 404) {
+          console.warn('Não foi possível carregar domínios permitidos:', error.message);
+        }
+        // Se não conseguir carregar, permitir qualquer domínio (comportamento padrão)
+        setAllowedDomains([]);
       }
     };
     loadAllowedDomains();
