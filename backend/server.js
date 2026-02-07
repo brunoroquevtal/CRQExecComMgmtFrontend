@@ -96,8 +96,8 @@ app.get('/', (req, res) => {
   });
 });
 
-// Upload de arquivo Excel
-app.post('/api/upload-excel', upload.single('file'), async (req, res) => {
+// Upload de arquivo Excel (apenas líderes e administradores)
+app.post('/api/upload-excel', requireAuth, requireRole('lider_mudanca', 'administrador'), upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Nenhum arquivo enviado' });
@@ -438,8 +438,8 @@ app.get('/api/activities', requireAuth, async (req, res) => {
   }
 });
 
-// Obter uma atividade específica
-app.get('/api/activity/:sequencia/:seq', async (req, res) => {
+// Obter uma atividade específica (todos os usuários autenticados podem ver)
+app.get('/api/activity/:sequencia/:seq', requireAuth, async (req, res) => {
   try {
     const { sequencia, seq } = req.params;
     const activity = await dbManager.getActivityControl(parseInt(seq), sequencia);
@@ -455,8 +455,8 @@ app.get('/api/activity/:sequencia/:seq', async (req, res) => {
   }
 });
 
-// Atualizar uma atividade
-app.put('/api/activity', async (req, res) => {
+// Atualizar uma atividade (apenas líderes e administradores)
+app.put('/api/activity', requireAuth, requireRole('lider_mudanca', 'administrador'), async (req, res) => {
   try {
     const { seq, sequencia, excel_data_id, tempo, grupo, atividade, inicio, fim, is_rollback, is_encerramento, ultima_sincronizacao, ...updates } = req.body;
 
@@ -885,8 +885,8 @@ app.post('/api/activity', async (req, res) => {
   }
 });
 
-// Deletar atividade
-app.delete('/api/activity', async (req, res) => {
+// Deletar atividade (apenas líderes e administradores)
+app.delete('/api/activity', requireAuth, requireRole('lider_mudanca', 'administrador'), async (req, res) => {
   try {
     const { seq, sequencia, excel_data_id } = req.body;
 
@@ -921,8 +921,8 @@ app.delete('/api/activity', async (req, res) => {
   }
 });
 
-// Limpar todos os dados do banco
-app.delete('/api/clear-database', async (req, res) => {
+// Limpar todos os dados do banco (apenas administradores)
+app.delete('/api/clear-database', requireAuth, requireRole('administrador'), async (req, res) => {
   try {
     const result = await dbManager.clearAllData();
     res.json({
@@ -939,7 +939,7 @@ app.delete('/api/clear-database', async (req, res) => {
 // Gerar mensagem de comunicação
 const { buildWhatsAppMessage, buildDetailedMessage } = require('./message_builder');
 
-app.get('/api/message', async (req, res) => {
+app.get('/api/message', requireAuth, async (req, res) => {
   try {
     const excelData = await dbManager.loadExcelData();
     const controlData = await dbManager.getAllActivitiesControl();
@@ -958,8 +958,8 @@ app.get('/api/message', async (req, res) => {
   }
 });
 
-// Gerar mensagem detalhada de comunicação
-app.get('/api/message-detailed', async (req, res) => {
+// Gerar mensagem detalhada de comunicação (todos os usuários autenticados podem ver)
+app.get('/api/message-detailed', requireAuth, async (req, res) => {
   try {
     const excelData = await dbManager.loadExcelData();
     const controlData = await dbManager.getAllActivitiesControl();
@@ -979,8 +979,8 @@ app.get('/api/message-detailed', async (req, res) => {
   }
 });
 
-// Obter estado de rollback de uma CRQ
-app.get('/api/rollback-state/:sequencia', async (req, res) => {
+// Obter estado de rollback de uma CRQ (todos os usuários autenticados podem ver)
+app.get('/api/rollback-state/:sequencia', requireAuth, async (req, res) => {
   try {
     const { sequencia } = req.params;
     const state = await dbManager.getRollbackState(sequencia);
@@ -991,8 +991,8 @@ app.get('/api/rollback-state/:sequencia', async (req, res) => {
   }
 });
 
-// Obter todos os estados de rollback
-app.get('/api/rollback-states', async (req, res) => {
+// Obter todos os estados de rollback (todos os usuários autenticados podem ver)
+app.get('/api/rollback-states', requireAuth, async (req, res) => {
   try {
     const states = await dbManager.getAllRollbackStates();
     res.json({ states });
@@ -1002,8 +1002,8 @@ app.get('/api/rollback-states', async (req, res) => {
   }
 });
 
-// Ativar/desativar rollback para uma CRQ
-app.put('/api/rollback-state/:sequencia', async (req, res) => {
+// Ativar/desativar rollback para uma CRQ (apenas líderes e administradores)
+app.put('/api/rollback-state/:sequencia', requireAuth, requireRole('lider_mudanca', 'administrador'), async (req, res) => {
   try {
     const { sequencia } = req.params;
     const { rollback_active } = req.body;
@@ -1025,8 +1025,8 @@ app.put('/api/rollback-state/:sequencia', async (req, res) => {
   }
 });
 
-// Obter atividades não sincronizadas
-app.get('/api/unsynced-activities', async (req, res) => {
+// Obter atividades não sincronizadas (todos os usuários autenticados podem ver)
+app.get('/api/unsynced-activities', requireAuth, async (req, res) => {
   try {
     const { sync_timestamp, sequencias } = req.query;
     
