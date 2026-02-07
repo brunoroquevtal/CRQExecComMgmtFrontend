@@ -6,16 +6,19 @@ function Communication() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [messageType, setMessageType] = useState('standard'); // 'standard' ou 'detailed'
+  const [rollbackFilter, setRollbackFilter] = useState('all'); // 'all', 'principal', 'rollback'
 
   useEffect(() => {
     loadMessage();
-  }, [messageType]);
+  }, [messageType, rollbackFilter]);
 
   const loadMessage = async () => {
     setLoading(true);
     try {
       const endpoint = messageType === 'detailed' ? '/message-detailed' : '/message';
-      const response = await api.get(endpoint);
+      const response = await api.get(endpoint, {
+        params: { rollback: rollbackFilter }
+      });
       setMessage(response.data.message || '');
       setLoading(false);
     } catch (error) {
@@ -57,6 +60,16 @@ function Communication() {
               📋 Detalhada
             </button>
           </div>
+          {/* Filtro de Rollback */}
+          <select
+            value={rollbackFilter}
+            onChange={(e) => setRollbackFilter(e.target.value)}
+            className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium text-vtal-gray-700 focus:ring-2 focus:ring-vtal-secondary focus:border-transparent"
+          >
+            <option value="all">📋 Todas</option>
+            <option value="principal">✅ Principais</option>
+            <option value="rollback">🔄 Rollback</option>
+          </select>
           <button
             onClick={loadMessage}
             disabled={loading}

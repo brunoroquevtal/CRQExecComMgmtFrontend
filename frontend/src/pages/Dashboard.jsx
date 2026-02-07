@@ -42,6 +42,7 @@ function Dashboard() {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
+  const [rollbackFilter, setRollbackFilter] = useState('all'); // 'all', 'principal', 'rollback'
 
   useEffect(() => {
     loadData();
@@ -270,6 +271,11 @@ function Dashboard() {
     
     const now = new Date();
     
+    // IMPORTANTE: Excluir atividades "em execução no prazo" - não são consideradas em atraso
+    if (statusLower.includes('em execução no prazo') || statusLower.includes('em execucao no prazo')) {
+      return false;
+    }
+    
     // 1. Em execução fora do prazo
     if (statusLower.includes('em execução fora do prazo') || statusLower.includes('em execucao fora do prazo')) {
       return true;
@@ -293,6 +299,26 @@ function Dashboard() {
     
     return false;
   });
+  
+  // Função para filtrar atividades por rollback
+  const filterByRollback = (activityList) => {
+    if (rollbackFilter === 'all') {
+      return activityList;
+    } else if (rollbackFilter === 'rollback') {
+      return activityList.filter(a => a.is_rollback === true || a.is_rollback === 1);
+    } else if (rollbackFilter === 'principal') {
+      return activityList.filter(a => !a.is_rollback || a.is_rollback === false || a.is_rollback === 0);
+    }
+    return activityList;
+  };
+  
+  // Aplicar filtro de rollback nas listas
+  const atividadesEmAtrasoFiltered = filterByRollback(atividadesEmAtraso);
+  const atividadesEmAndamentoFiltered = filterByRollback(atividadesEmAndamento);
+  const atividadesEmExecucaoNoPrazoFiltered = filterByRollback(atividadesEmExecucaoNoPrazo);
+  const atividadesEmExecucaoForaPrazoFiltered = filterByRollback(atividadesEmExecucaoForaPrazo);
+  const atividadesAIniciarNoPrazoFiltered = filterByRollback(atividadesAIniciarNoPrazo);
+  const atividadesAIniciarForaPrazoFiltered = filterByRollback(atividadesAIniciarForaPrazo);
 
   // Filtrar atividades "Em Andamento"
   // Inclui: Em execução no prazo
@@ -581,13 +607,25 @@ function Dashboard() {
     <div className="space-y-4 md:space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-2xl md:text-3xl font-display font-bold text-vtal-gray-800">📊 Dashboard Executivo</h1>
-        <button
-          onClick={loadData}
-          className="bg-vtal-secondary hover:bg-vtal-primary text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 font-medium text-sm md:text-base"
-        >
-          <span>🔄</span>
-          <span>Atualizar</span>
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Filtro de Rollback */}
+          <select
+            value={rollbackFilter}
+            onChange={(e) => setRollbackFilter(e.target.value)}
+            className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium text-vtal-gray-700 focus:ring-2 focus:ring-vtal-secondary focus:border-transparent"
+          >
+            <option value="all">📋 Todas</option>
+            <option value="principal">✅ Principais</option>
+            <option value="rollback">🔄 Rollback</option>
+          </select>
+          <button
+            onClick={loadData}
+            className="bg-vtal-secondary hover:bg-vtal-primary text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 font-medium text-sm md:text-base"
+          >
+            <span>🔄</span>
+            <span>Atualizar</span>
+          </button>
+        </div>
       </div>
 
       {/* Abas por CRQ */}
@@ -760,7 +798,7 @@ function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Em Atraso */}
           <ActivityList
-            activities={atividadesEmAtraso}
+            activities={atividadesEmAtrasoFiltered}
             title="Em Atraso"
             icon="🔴"
             borderColor="border-red-600"
@@ -769,7 +807,7 @@ function Dashboard() {
 
           {/* Em Andamento */}
           <ActivityList
-            activities={atividadesEmAndamento}
+            activities={atividadesEmAndamentoFiltered}
             title="Em Andamento"
             icon="⏳"
             borderColor="border-blue-600"
@@ -787,7 +825,7 @@ function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Em Execução no Prazo */}
           <ActivityList
-            activities={atividadesEmExecucaoNoPrazo}
+            activities={atividadesEmExecucaoNoPrazoFiltered}
             title="Em Execução no Prazo"
             icon="⏳"
             borderColor="border-blue-600"
@@ -796,7 +834,7 @@ function Dashboard() {
 
           {/* Em Execução Fora do Prazo */}
           <ActivityList
-            activities={atividadesEmExecucaoForaPrazo}
+            activities={atividadesEmExecucaoForaPrazoFiltered}
             title="Em Execução Fora do Prazo"
             icon="🔴"
             borderColor="border-red-500"
@@ -805,7 +843,7 @@ function Dashboard() {
 
           {/* A Iniciar no Prazo */}
           <ActivityList
-            activities={atividadesAIniciarNoPrazo}
+            activities={atividadesAIniciarNoPrazoFiltered}
             title="A Iniciar no Prazo"
             icon="🟦"
             borderColor="border-blue-300"
@@ -814,7 +852,7 @@ function Dashboard() {
 
           {/* A Iniciar Fora do Prazo */}
           <ActivityList
-            activities={atividadesAIniciarForaPrazo}
+            activities={atividadesAIniciarForaPrazoFiltered}
             title="A Iniciar Fora do Prazo"
             icon="🟠"
             borderColor="border-orange-400"
