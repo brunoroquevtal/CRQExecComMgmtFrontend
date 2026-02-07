@@ -63,8 +63,8 @@ desktop.ini
 # Streamlit
 .streamlit/secrets.toml
 
-# Backend (repositório separado - agora é um git submodule)
-# Não ignorar - o submodule será gerenciado pelo Git
+# Backend (repositório separado - não incluir no frontend)
+backend/
 
 # Node (Frontend)
 node_modules/

@@ -1,7 +1,6 @@
 [build]
   base = "frontend"
-  # Atualizar submodules antes do build (requer GITHUB_TOKEN configurado no Netlify)
-  command = "git submodule update --init --recursive && npm ci && npm run build"
+  command = "npm ci && npm run build"
   publish = "dist"
 
 [build.environment]
