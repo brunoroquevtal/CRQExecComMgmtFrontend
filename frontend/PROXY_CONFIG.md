@@ -19,12 +19,12 @@ O proxy do Vite é usado **apenas quando `VITE_API_URL` não está definida**.
 
 ```env
 # .env.local
-VITE_API_URL=https://crqcommunidationbackend.netlify.app/api
+VITE_API_URL=https://seu-backend.netlify.app/api
 ```
 
 **Comportamento:**
 - O axios usa a URL completa diretamente
-- Exemplo: `GET /api/statistics` → `https://crqcommunidationbackend.netlify.app/api/statistics`
+- Exemplo: `GET /api/statistics` → `https://seu-backend.netlify.app/api/statistics`
 - O proxy **não é usado** porque a URL é absoluta
 - **Útil para desenvolvimento com backend remoto** (Netlify, etc.)
 
@@ -49,7 +49,7 @@ Requisição: api.get('/statistics')
 Verifica: VITE_API_URL está definida?
     ↓
     ├─ SIM → Usa URL completa (ignora proxy)
-    │         https://crqcommunidationbackend.netlify.app/api/statistics
+    │         https://seu-backend.netlify.app/api/statistics
     │
     └─ NÃO → Usa proxy (URL relativa)
               /api/statistics → http://localhost:3000/api/statistics
@@ -74,7 +74,7 @@ Verifica: VITE_API_URL está definida?
 3. Faça uma requisição (ex: carregar dashboard)
 4. Veja a URL da requisição:
    - `http://localhost:5173/api/...` → Proxy ativo (redireciona para localhost:3000)
-   - `https://crqcommunidationbackend.netlify.app/api/...` → VITE_API_URL definida
+   - `https://seu-backend.netlify.app/api/...` → VITE_API_URL definida
 
 ## ⚙️ Modificar o Proxy
 

@@ -36,12 +36,12 @@ Crie um arquivo `.env.local` na pasta `frontend` com uma das opções abaixo:
 
 **Opção A: Backend no Netlify (Recomendado)**
 ```env
-VITE_API_URL=https://crqcommunidationbackend.netlify.app/api
+VITE_API_URL=https://seu-backend.netlify.app/api
 ```
 
 **Opção B: Backend no Netlify usando Functions**
 ```env
-VITE_API_URL=https://crqcommunidationbackend.netlify.app/.netlify/functions/api
+VITE_API_URL=https://seu-backend.netlify.app/.netlify/functions/api
 ```
 
 **Opção C: Backend Local**
@@ -109,7 +109,7 @@ Se você receber erros de CORS ao acessar o backend no Netlify:
 ### Backend não responde
 
 1. Teste a URL do backend diretamente no navegador:
-   - `https://crqcommunidationbackend.netlify.app/health`
+   - `https://seu-backend.netlify.app/health`
 2. Verifique se o backend está online no Netlify Dashboard
 3. Verifique os logs do backend no Netlify
 
