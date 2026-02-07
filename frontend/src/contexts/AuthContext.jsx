@@ -60,13 +60,34 @@ export function AuthProvider({ children }) {
   }, []);
 
   // Carregar perfil do usuário
-  const loadUserProfile = async (userId) => {
+  // forceSupabase: se true, busca diretamente do Supabase ignorando o backend
+  const loadUserProfile = async (userId, forceSupabase = false) => {
     try {
       // Adicionar token ao header da API
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         setLoading(false);
         return;
+      }
+
+      // Se forceSupabase for true, buscar diretamente do Supabase (útil após atualizações)
+      if (forceSupabase) {
+        try {
+          const { data: supabaseProfile, error: supabaseError } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+          if (!supabaseError && supabaseProfile) {
+            setProfile(supabaseProfile);
+            setIsAuthenticated(true);
+            setLoading(false);
+            return;
+          }
+        } catch (supabaseError) {
+          console.warn('Erro ao buscar perfil do Supabase:', supabaseError.message);
+        }
       }
 
       // Tentar buscar perfil via API do backend primeiro
@@ -76,6 +97,29 @@ export function AuthProvider({ children }) {
             Authorization: `Bearer ${session.access_token}`
           }
         });
+
+        // Verificar se o perfil retornado tem role 'visualizador' padrão
+        // Se sim, tentar buscar diretamente do Supabase para garantir que temos o role atualizado
+        if (response.data && response.data.role === 'visualizador' && !forceSupabase) {
+          // Tentar buscar do Supabase para verificar se há atualização
+          try {
+            const { data: supabaseProfile, error: supabaseError } = await supabase
+              .from('user_profiles')
+              .select('*')
+              .eq('id', userId)
+              .single();
+
+            if (!supabaseError && supabaseProfile && supabaseProfile.role !== 'visualizador') {
+              // Perfil no Supabase tem role diferente - usar ele
+              setProfile(supabaseProfile);
+              setIsAuthenticated(true);
+              setLoading(false);
+              return;
+            }
+          } catch (supabaseCheckError) {
+            // Ignorar erro e usar perfil do backend
+          }
+        }
 
         setProfile(response.data);
         setIsAuthenticated(true);
