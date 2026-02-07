@@ -25,7 +25,7 @@ try {
     Write-Host "[OK] PyInstaller encontrado: $pyinstallerVersion" -ForegroundColor Green
 } catch {
     Write-Host "[AVISO] PyInstaller nao encontrado. Instalando..." -ForegroundColor Yellow
-    pip install pyinstaller
+    python -m pip install pyinstaller
     if ($LASTEXITCODE -ne 0) {
         Write-Host "[ERRO] Falha ao instalar PyInstaller!" -ForegroundColor Red
         exit 1
@@ -39,7 +39,7 @@ Write-Host "Verificando dependencias..." -ForegroundColor Yellow
 if (Test-Path "requirements_sync.txt") {
     Write-Host "[OK] Arquivo requirements_sync.txt encontrado" -ForegroundColor Green
     Write-Host "Instalando dependencias..." -ForegroundColor Yellow
-    pip install -r requirements_sync.txt
+    python -m pip install -r requirements_sync.txt
     if ($LASTEXITCODE -ne 0) {
         Write-Host "[ERRO] Falha ao instalar dependencias!" -ForegroundColor Red
         exit 1
@@ -47,7 +47,7 @@ if (Test-Path "requirements_sync.txt") {
     Write-Host "[OK] Dependencias instaladas!" -ForegroundColor Green
 } else {
     Write-Host "[AVISO] requirements_sync.txt nao encontrado. Instalando dependencias basicas..." -ForegroundColor Yellow
-    pip install pandas openpyxl requests pyinstaller
+    python -m pip install pandas openpyxl requests pyinstaller
     if ($LASTEXITCODE -ne 0) {
         Write-Host "[ERRO] Falha ao instalar dependencias!" -ForegroundColor Red
         exit 1
@@ -78,17 +78,15 @@ Write-Host "Isso pode levar alguns minutos..." -ForegroundColor Gray
 
 $scriptPath = Join-Path $PSScriptRoot "sync_excel.py"
 
-pyinstaller `
+python -m PyInstaller `
     --onefile `
     --name "sync_excel" `
     --console `
     --clean `
     --noconfirm `
-    --add-data "requirements_sync.txt;." `
     --hidden-import pandas `
     --hidden-import openpyxl `
     --hidden-import requests `
-    --icon NONE `
     $scriptPath
 
 if ($LASTEXITCODE -eq 0) {
