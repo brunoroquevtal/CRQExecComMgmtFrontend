@@ -39,6 +39,7 @@ const SEQUENCIAS_INFO = {
 
 function Dashboard() {
   const [statistics, setStatistics] = useState(null);
+  const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
 
@@ -48,8 +49,12 @@ function Dashboard() {
 
   const loadData = async () => {
     try {
-      const statsRes = await api.get('/statistics');
+      const [statsRes, activitiesRes] = await Promise.all([
+        api.get('/statistics'),
+        api.get('/activities')
+      ]);
       setStatistics(statsRes.data);
+      setActivities(activitiesRes.data.activities || []);
       setLoading(false);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -159,6 +164,116 @@ function Dashboard() {
       a_iniciar_fora_prazo: statsSafe.a_iniciar_fora_prazo || 0
     };
   });
+
+  // Filtrar atividades por status e CRQ
+  const getFilteredActivities = (statusFilter) => {
+    let filtered = activities.filter(activity => {
+      // Excluir milestones
+      if (activity.is_milestone) return false;
+      
+      // Filtrar por status - verificar correspondência exata ou parcial
+      const statusLower = (activity.status || '').toLowerCase();
+      const filterLower = statusFilter.toLowerCase();
+      
+      // Verificar correspondência exata ou se o status contém o filtro
+      const matchesStatus = statusLower === filterLower || 
+                          statusLower.includes(filterLower) ||
+                          filterLower.includes(statusLower);
+      
+      if (!matchesStatus) return false;
+      
+      // Filtrar por CRQ se uma aba específica estiver selecionada
+      if (activeTab !== 'all') {
+        return activity.sequencia === activeTab;
+      }
+      
+      return true;
+    });
+    
+    return filtered;
+  };
+
+  // Atividades por categoria
+  const atividadesEmExecucaoNoPrazo = getFilteredActivities('em execução no prazo');
+  const atividadesEmExecucaoForaPrazo = getFilteredActivities('em execução fora do prazo');
+  const atividadesAIniciarNoPrazo = getFilteredActivities('a iniciar no prazo');
+  const atividadesAIniciarForaPrazo = getFilteredActivities('a iniciar fora do prazo');
+
+  // Componente para renderizar lista de atividades
+  const ActivityList = ({ activities, title, icon, borderColor, bgColor }) => {
+    if (activities.length === 0) {
+      return (
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <h3 className={`text-lg font-display font-semibold text-vtal-gray-800 mb-4 flex items-center gap-2 ${borderColor}`}>
+            <span>{icon}</span>
+            <span>{title}</span>
+            <span className="text-sm font-normal text-gray-500">({activities.length})</span>
+          </h3>
+          <p className="text-gray-500 text-sm">Nenhuma atividade encontrada</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <h3 className={`text-lg font-display font-semibold text-vtal-gray-800 mb-4 flex items-center gap-2 border-b-2 pb-2 ${borderColor}`}>
+          <span>{icon}</span>
+          <span>{title}</span>
+          <span className="text-sm font-normal text-gray-500">({activities.length})</span>
+        </h3>
+        <div className="max-h-96 overflow-y-auto">
+          <div className="space-y-2">
+            {activities.map((activity, index) => {
+              const SequenciaIcon = activity.sequencia ? SEQUENCIAS_INFO[activity.sequencia]?.icon : null;
+              const sequenciaColor = activity.sequencia ? SEQUENCIAS_INFO[activity.sequencia]?.color : '';
+              
+              return (
+                <div
+                  key={`${activity.sequencia}-${activity.seq}-${index}`}
+                  className={`p-3 rounded-lg border-l-4 ${bgColor} hover:shadow-md transition-shadow`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        {SequenciaIcon && (
+                          <SequenciaIcon className={`w-4 h-4 flex-shrink-0 ${sequenciaColor}`} />
+                        )}
+                        <span className="text-xs font-semibold text-vtal-gray-600 uppercase">
+                          {activity.sequencia || 'N/A'}
+                        </span>
+                        <span className="text-xs text-vtal-gray-500">#{activity.seq || 'N/A'}</span>
+                      </div>
+                      <p className="text-sm font-medium text-vtal-gray-800 truncate">
+                        {activity.atividade || activity.grupo || 'Sem descrição'}
+                      </p>
+                      {activity.grupo && activity.atividade && (
+                        <p className="text-xs text-vtal-gray-500 mt-1 truncate">
+                          {activity.grupo}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-4 mt-2 text-xs text-vtal-gray-600">
+                        {activity.inicio && (
+                          <span>Início: {activity.inicio}</span>
+                        )}
+                        {activity.fim && (
+                          <span>Fim: {activity.fim}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0">
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${bgColor} text-vtal-gray-700`}>
+                        {activity.status || 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -331,6 +446,51 @@ function Dashboard() {
               Nenhum dado disponível para exibir
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Listas de Atividades por Status */}
+      <div className="space-y-4 md:space-y-6">
+        <h2 className="text-xl md:text-2xl font-display font-bold text-vtal-gray-800">
+          📋 Lista de Atividades por Status
+        </h2>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          {/* Em Execução no Prazo */}
+          <ActivityList
+            activities={atividadesEmExecucaoNoPrazo}
+            title="Em Execução no Prazo"
+            icon="⏳"
+            borderColor="border-blue-600"
+            bgColor="bg-blue-50 border-blue-200"
+          />
+
+          {/* Em Execução Fora do Prazo */}
+          <ActivityList
+            activities={atividadesEmExecucaoForaPrazo}
+            title="Em Execução Fora do Prazo"
+            icon="🔴"
+            borderColor="border-red-500"
+            bgColor="bg-red-50 border-red-200"
+          />
+
+          {/* A Iniciar no Prazo */}
+          <ActivityList
+            activities={atividadesAIniciarNoPrazo}
+            title="A Iniciar no Prazo"
+            icon="🟦"
+            borderColor="border-blue-300"
+            bgColor="bg-blue-50 border-blue-200"
+          />
+
+          {/* A Iniciar Fora do Prazo */}
+          <ActivityList
+            activities={atividadesAIniciarForaPrazo}
+            title="A Iniciar Fora do Prazo"
+            icon="🟠"
+            borderColor="border-orange-400"
+            bgColor="bg-orange-50 border-orange-200"
+          />
         </div>
       </div>
     </div>
