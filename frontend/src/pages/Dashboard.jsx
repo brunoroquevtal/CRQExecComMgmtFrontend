@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import api from '../utils/api';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
@@ -167,7 +167,7 @@ function Dashboard() {
   });
 
   // Filtrar atividades por status e CRQ
-  const getFilteredActivities = (statusFilter) => {
+  const getFilteredActivities = useCallback((statusFilter) => {
     let filtered = activities.filter(activity => {
       // Excluir milestones
       if (activity.is_milestone) return false;
@@ -192,16 +192,20 @@ function Dashboard() {
     });
     
     return filtered;
-  };
+  }, [activities, activeTab]);
 
   // Atividades por categoria
-  const atividadesEmExecucaoNoPrazo = getFilteredActivities('em execução no prazo');
-  const atividadesEmExecucaoForaPrazo = getFilteredActivities('em execução fora do prazo');
-  const atividadesAIniciarNoPrazo = getFilteredActivities('a iniciar no prazo');
-  const atividadesAIniciarForaPrazo = getFilteredActivities('a iniciar fora do prazo');
+  const atividadesEmExecucaoNoPrazo = useMemo(() => getFilteredActivities('em execução no prazo'), [getFilteredActivities]);
+  const atividadesEmExecucaoForaPrazo = useMemo(() => getFilteredActivities('em execução fora do prazo'), [getFilteredActivities]);
+  const atividadesAIniciarNoPrazo = useMemo(() => getFilteredActivities('a iniciar no prazo'), [getFilteredActivities]);
+  const atividadesAIniciarForaPrazo = useMemo(() => getFilteredActivities('a iniciar fora do prazo'), [getFilteredActivities]);
 
-  // Função para parsear data
-  const parseDate = (dateValue) => {
+  // Filtrar atividades "Em Andamento"
+  // Inclui: Em execução no prazo
+  const atividadesEmAndamento = useMemo(() => getFilteredActivities('em execução no prazo'), [getFilteredActivities]);
+
+  // Função para parsear data (definida antes de ser usada)
+  const parseDate = useCallback((dateValue) => {
     if (!dateValue) return null;
     if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
       return dateValue;
@@ -217,7 +221,7 @@ function Dashboard() {
       }
     }
     return null;
-  };
+  }, []);
 
   // Filtrar atividades "Em Atraso"
   // Inclui: 
@@ -225,7 +229,7 @@ function Dashboard() {
   // 2. A Iniciar fora do prazo
   // 3. Ainda não iniciadas quando horário atual > início planejado (mesmo que status não indique atraso)
   // EXCLUI: Atividades concluídas (mesmo que tenham terminado fora do prazo)
-  const atividadesEmAtraso = activities.filter(activity => {
+  const atividadesEmAtraso = useMemo(() => activities.filter(activity => {
     // Excluir milestones
     if (activity.is_milestone) return false;
     
@@ -298,10 +302,10 @@ function Dashboard() {
     }
     
     return false;
-  });
+  }), [activities, activeTab, parseDate]);
   
   // Função para filtrar atividades por rollback
-  const filterByRollback = (activityList) => {
+  const filterByRollback = useCallback((activityList) => {
     if (rollbackFilter === 'all') {
       return activityList;
     } else if (rollbackFilter === 'rollback') {
@@ -310,19 +314,15 @@ function Dashboard() {
       return activityList.filter(a => !a.is_rollback || a.is_rollback === false || a.is_rollback === 0);
     }
     return activityList;
-  };
+  }, [rollbackFilter]);
   
   // Aplicar filtro de rollback nas listas
-  const atividadesEmAtrasoFiltered = filterByRollback(atividadesEmAtraso);
-  const atividadesEmAndamentoFiltered = filterByRollback(atividadesEmAndamento);
-  const atividadesEmExecucaoNoPrazoFiltered = filterByRollback(atividadesEmExecucaoNoPrazo);
-  const atividadesEmExecucaoForaPrazoFiltered = filterByRollback(atividadesEmExecucaoForaPrazo);
-  const atividadesAIniciarNoPrazoFiltered = filterByRollback(atividadesAIniciarNoPrazo);
-  const atividadesAIniciarForaPrazoFiltered = filterByRollback(atividadesAIniciarForaPrazo);
-
-  // Filtrar atividades "Em Andamento"
-  // Inclui: Em execução no prazo
-  const atividadesEmAndamento = getFilteredActivities('em execução no prazo');
+  const atividadesEmAtrasoFiltered = useMemo(() => filterByRollback(atividadesEmAtraso), [atividadesEmAtraso, filterByRollback]);
+  const atividadesEmAndamentoFiltered = useMemo(() => filterByRollback(atividadesEmAndamento), [atividadesEmAndamento, filterByRollback]);
+  const atividadesEmExecucaoNoPrazoFiltered = useMemo(() => filterByRollback(atividadesEmExecucaoNoPrazo), [atividadesEmExecucaoNoPrazo, filterByRollback]);
+  const atividadesEmExecucaoForaPrazoFiltered = useMemo(() => filterByRollback(atividadesEmExecucaoForaPrazo), [atividadesEmExecucaoForaPrazo, filterByRollback]);
+  const atividadesAIniciarNoPrazoFiltered = useMemo(() => filterByRollback(atividadesAIniciarNoPrazo), [atividadesAIniciarNoPrazo, filterByRollback]);
+  const atividadesAIniciarForaPrazoFiltered = useMemo(() => filterByRollback(atividadesAIniciarForaPrazo), [atividadesAIniciarForaPrazo, filterByRollback]);
 
   // Função para obter cor do status baseado nos novos status
   const getStatusColor = (status) => {
