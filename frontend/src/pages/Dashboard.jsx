@@ -223,6 +223,7 @@ function Dashboard() {
   // 1. Em execução fora do prazo
   // 2. A Iniciar fora do prazo
   // 3. Ainda não iniciadas quando horário atual > início planejado (mesmo que status não indique atraso)
+  // EXCLUI: Atividades concluídas (mesmo que tenham terminado fora do prazo)
   const atividadesEmAtraso = activities.filter(activity => {
     // Excluir milestones
     if (activity.is_milestone) return false;
@@ -233,6 +234,40 @@ function Dashboard() {
     }
 
     const statusLower = (activity.status || '').toLowerCase();
+    
+    // EXCLUIR atividades concluídas - verificar múltiplas formas
+    // 1. Verificar status salvo (múltiplas variações)
+    const isConcluidoByStatus = statusLower.includes('concluído') || 
+                                statusLower.includes('concluido') || 
+                                statusLower.includes('concluida') ||
+                                statusLower === 'concluído' ||
+                                statusLower === 'concluido' ||
+                                statusLower === 'concluida' ||
+                                statusLower.trim() === 'concluído' ||
+                                statusLower.trim() === 'concluido' ||
+                                statusLower.trim() === 'concluida';
+    
+    // 2. Verificar se tem horário de fim real (indica que foi concluída)
+    const horarioFimReal = parseDate(activity.horario_fim_real);
+    const isConcluidoByHorario = !!horarioFimReal;
+    
+    // 3. Verificar se o status calculado seria "Concluído" (fallback)
+    // Se tem horario_fim_real mas status não está salvo como concluído
+    if (isConcluidoByHorario && !isConcluidoByStatus) {
+      // Log para debug (pode remover depois)
+      console.warn('[Dashboard] Atividade com horario_fim_real mas status não indica concluído:', {
+        seq: activity.seq,
+        sequencia: activity.sequencia,
+        status: activity.status,
+        horario_fim_real: activity.horario_fim_real
+      });
+    }
+    
+    // Se está concluída por qualquer critério, excluir da lista de atraso
+    if (isConcluidoByStatus || isConcluidoByHorario) {
+      return false;
+    }
+    
     const now = new Date();
     
     // 1. Em execução fora do prazo
