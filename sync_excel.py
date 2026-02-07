@@ -1134,7 +1134,7 @@ def main():
         print("\nPressione Ctrl+C para interromper a execucao automatica...")
         logger.info(f"Proxima execucao agendada para {next_execution.strftime('%d/%m/%Y %H:%M:%S')}")
         
-        # Aguardar até a próxima execução
+        # Aguardar até a próxima execução com contagem regressiva em tempo real
         wait_seconds = sync_period * 60
         waited = 0
         
@@ -1142,11 +1142,20 @@ def main():
             time.sleep(1)
             waited += 1
             
-            # Mostrar contagem regressiva a cada minuto
-            remaining_minutes = (wait_seconds - waited) // 60
-            remaining_seconds = (wait_seconds - waited) % 60
-            if waited % 60 == 0 or waited == 1:
-                print(f"\rAguardando proxima execucao... {remaining_minutes:02d}:{remaining_seconds:02d} restantes", end="", flush=True)
+            # Calcular tempo restante
+            remaining_total = wait_seconds - waited
+            remaining_hours = remaining_total // 3600
+            remaining_minutes = (remaining_total % 3600) // 60
+            remaining_secs = remaining_total % 60
+            
+            # Mostrar contagem regressiva atualizada a cada segundo
+            if remaining_hours > 0:
+                countdown_str = f"{remaining_hours:02d}:{remaining_minutes:02d}:{remaining_secs:02d}"
+            else:
+                countdown_str = f"{remaining_minutes:02d}:{remaining_secs:02d}"
+            
+            # Atualizar linha com contagem regressiva
+            print(f"\r⏳ Proxima execucao em: {countdown_str} | Data/Hora: {next_execution.strftime('%d/%m/%Y %H:%M:%S')}", end="", flush=True)
         
         print()  # Nova linha após contagem
         
