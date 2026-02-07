@@ -661,30 +661,42 @@ def extract_activity_data(df: pd.DataFrame, sequencia: str, is_rollback: bool = 
     
     for idx, row in df.iterrows():
         try:
-            seq_value = row[seq_col]
+            # Extrair valores básicos primeiro para log
+            seq_value = row[seq_col] if seq_col else None
+            atividade = None
+            status_read = None
+            
+            # Extrair atividade para log
+            if atividade_col and atividade_col in row:
+                atividade_value = row[atividade_col]
+                if not pd.isna(atividade_value):
+                    atividade = str(atividade_value).strip()
+            
+            # Extrair status para log
+            if status_col and status_col in row:
+                status_value = row[status_col]
+                if pd.notna(status_value):
+                    status_read = str(status_value).strip()
+            
+            # Log inicial da linha sendo lida (ANTES de qualquer validação)
+            logger.info(f"[LEITURA] 📖 Lendo linha {idx}: CRQ {sequencia}, Atividade: {atividade[:100] if atividade else 'N/A'}, Status: {status_read if status_read else 'N/A'}")
+            
             if pd.isna(seq_value):
                 ignoradas_seq_vazio += 1
-                logger.debug(f"Linha {idx} ignorada: Seq vazio ou NaN")
+                logger.warning(f"[LEITURA] ⚠️ Linha {idx} ignorada: Seq vazio ou NaN - CRQ {sequencia}, Atividade: {atividade[:100] if atividade else 'N/A'}")
                 continue
             
             try:
                 seq = int(float(seq_value))
             except:
                 ignoradas_seq_invalido += 1
-                logger.warning(f"Linha {idx} ignorada: Seq inválido (valor: {seq_value})")
+                logger.warning(f"[LEITURA] ⚠️ Linha {idx} ignorada: Seq inválido (valor: {seq_value}) - CRQ {sequencia}, Atividade: {atividade[:100] if atividade else 'N/A'}")
                 continue
-            
-            # Extrair atividade primeiro para validar
-            atividade = None
-            if atividade_col and atividade_col in row:
-                atividade_value = row[atividade_col]
-                if not pd.isna(atividade_value):
-                    atividade = str(atividade_value).strip()
             
             # Validar: atividade não pode estar vazia
             if not atividade or atividade == "":
                 ignoradas_atividade_vazia += 1
-                logger.warning(f"Linha {idx} ignorada: atividade vazia ou não encontrada (Seq: {seq})")
+                logger.warning(f"[LEITURA] ⚠️ Linha {idx} ignorada: atividade vazia ou não encontrada - Seq {seq}, CRQ {sequencia}")
                 continue
             
             # Extrair início e fim planejados usando as colunas identificadas
@@ -714,7 +726,7 @@ def extract_activity_data(df: pd.DataFrame, sequencia: str, is_rollback: bool = 
             # Validar: deve ter pelo menos início OU fim planejado
             if not inicio_planejado and not fim_planejado:
                 ignoradas_sem_datas += 1
-                logger.warning(f"Linha {idx} ignorada: sem início ou fim planejado (Seq: {seq}, Atividade: {atividade})")
+                logger.warning(f"[LEITURA] ⚠️ Linha {idx} ignorada: sem início ou fim planejado - Seq {seq}, CRQ {sequencia}, Atividade: {atividade[:100]}, Status: {status_read if status_read else 'N/A'}")
                 continue
             
             activity_data = {
@@ -835,10 +847,11 @@ def extract_activity_data(df: pd.DataFrame, sequencia: str, is_rollback: bool = 
             
             activity_data["is_milestone"] = is_milestone
             
-            # Log da atividade extraída do Excel
-            status_log = activity_data.get('status', 'N/A')
-            logger.info(f"[EXCEL] 📥 Linha extraída: Seq {seq}, CRQ {sequencia}, Atividade: {atividade[:100]}, Status: {status_log}")
+            # Log da atividade extraída do Excel (após processamento completo)
+            status_log = activity_data.get('status', status_read if status_read else 'N/A')
+            logger.info(f"[EXCEL] ✅ Linha processada e pronta para envio: Seq {seq}, CRQ {sequencia}, Atividade: {atividade[:100]}, Status: {status_log}")
             
+            # IMPORTANTE: TODAS as atividades devem ser adicionadas à lista para envio à API
             activities.append(activity_data)
         
         except Exception as e:
