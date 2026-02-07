@@ -397,6 +397,9 @@ class DatabaseManager {
       'is_rollback'
     ];
 
+    // Campos booleanos que devem ser convertidos para INTEGER (0 ou 1)
+    const booleanFields = ['is_milestone', 'arquivado', 'is_rollback'];
+
     const fields = [];
     const values = [];
 
@@ -404,7 +407,24 @@ class DatabaseManager {
       // Filtrar apenas campos permitidos e que não são usados na cláusula WHERE
       if (allowedFields.includes(key)) {
         fields.push(`${key} = ?`);
-        values.push(value);
+        
+        // Converter valores booleanos para inteiros (0 ou 1)
+        // Também tratar strings "true"/"false" que podem vir do frontend
+        if (booleanFields.includes(key)) {
+          if (typeof value === 'boolean') {
+            values.push(value ? 1 : 0);
+          } else if (typeof value === 'string') {
+            // Converter strings "true"/"false" para inteiros
+            values.push(value.toLowerCase() === 'true' ? 1 : 0);
+          } else if (value === null || value === undefined) {
+            values.push(0);
+          } else {
+            // Tentar converter para número (1 ou 0)
+            values.push(value ? 1 : 0);
+          }
+        } else {
+          values.push(value);
+        }
       }
     }
 

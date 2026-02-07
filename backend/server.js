@@ -596,7 +596,9 @@ app.put('/api/activity', async (req, res) => {
         ? activityControlUpdates.horario_fim_real 
         : existing.horario_fim_real,
       is_milestone: activityControlUpdates.is_milestone !== undefined 
-        ? activityControlUpdates.is_milestone 
+        ? (typeof activityControlUpdates.is_milestone === 'boolean' 
+            ? activityControlUpdates.is_milestone 
+            : activityControlUpdates.is_milestone === 'true' || activityControlUpdates.is_milestone === true || activityControlUpdates.is_milestone === 1)
         : existing.is_milestone
     };
     
