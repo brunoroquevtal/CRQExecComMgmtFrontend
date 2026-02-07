@@ -7,6 +7,7 @@ import DataEditor from './pages/DataEditor';
 import Communication from './pages/Communication';
 import Settings from './pages/Settings';
 import Planning from './pages/Planning';
+import UserManagement from './pages/UserManagement';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -65,6 +66,14 @@ function AppRoutes() {
         />
         <Route path="planejamento" element={<Planning />} />
         <Route path="comunicacao" element={<Communication />} />
+        <Route 
+          path="usuarios" 
+          element={
+            <ProtectedRoute requiredRole="administrador">
+              <UserManagement />
+            </ProtectedRoute>
+          } 
+        />
         <Route 
           path="configuracoes" 
           element={

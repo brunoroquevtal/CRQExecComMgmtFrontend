@@ -69,7 +69,7 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      // Buscar perfil via API do backend
+      // Tentar buscar perfil via API do backend primeiro
       try {
         const response = await api.get('/auth/profile', {
           headers: {
@@ -80,36 +80,83 @@ export function AuthProvider({ children }) {
         setProfile(response.data);
         setIsAuthenticated(true);
         setLoading(false);
+        return; // Sucesso, sair da função
       } catch (profileError) {
-        // Se o endpoint não existir (404), criar perfil padrão
+        // Se o endpoint não existir (404), tentar buscar diretamente do Supabase
         if (profileError.response?.status === 404) {
-          // Endpoint não existe - usar perfil padrão (não logar erro)
-          const defaultProfile = {
-            id: session.user.id,
-            email: session.user.email,
-            full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
-            role: 'visualizador' // Role padrão quando backend não está configurado
-          };
-          setProfile(defaultProfile);
-          setIsAuthenticated(true);
-          setLoading(false);
+          // Endpoint não existe - buscar diretamente do Supabase
+          try {
+            const { data: supabaseProfile, error: supabaseError } = await supabase
+              .from('user_profiles')
+              .select('*')
+              .eq('id', userId)
+              .single();
+
+            if (!supabaseError && supabaseProfile) {
+              // Perfil encontrado no Supabase
+              setProfile(supabaseProfile);
+              setIsAuthenticated(true);
+              setLoading(false);
+              return;
+            } else {
+              // Perfil não encontrado no Supabase - criar perfil padrão
+              const defaultProfile = {
+                id: session.user.id,
+                email: session.user.email,
+                full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
+                role: 'visualizador' // Role padrão quando perfil não existe
+              };
+              setProfile(defaultProfile);
+              setIsAuthenticated(true);
+              setLoading(false);
+            }
+          } catch (supabaseDirectError) {
+            // Erro ao buscar do Supabase - usar perfil padrão
+            console.warn('Erro ao buscar perfil do Supabase:', supabaseDirectError);
+            const defaultProfile = {
+              id: session.user.id,
+              email: session.user.email,
+              full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
+              role: 'visualizador'
+            };
+            setProfile(defaultProfile);
+            setIsAuthenticated(true);
+            setLoading(false);
+          }
         } else if (profileError.response?.status === 401) {
           // Se erro 401, fazer logout
           await logout();
         } else {
-          // Outro erro - usar perfil padrão (logar apenas em dev)
-          if (import.meta.env.DEV) {
-            console.warn('Erro ao carregar perfil do backend. Usando perfil padrão:', profileError.message);
+          // Outro erro - tentar buscar do Supabase diretamente
+          try {
+            const { data: supabaseProfile } = await supabase
+              .from('user_profiles')
+              .select('*')
+              .eq('id', userId)
+              .single();
+
+            if (supabaseProfile) {
+              setProfile(supabaseProfile);
+              setIsAuthenticated(true);
+              setLoading(false);
+            } else {
+              throw new Error('Perfil não encontrado');
+            }
+          } catch (supabaseError) {
+            // Fallback para perfil padrão
+            if (import.meta.env.DEV) {
+              console.warn('Erro ao carregar perfil. Usando perfil padrão:', profileError.message);
+            }
+            const defaultProfile = {
+              id: session.user.id,
+              email: session.user.email,
+              full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
+              role: 'visualizador'
+            };
+            setProfile(defaultProfile);
+            setIsAuthenticated(true);
+            setLoading(false);
           }
-          const defaultProfile = {
-            id: session.user.id,
-            email: session.user.email,
-            full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
-            role: 'visualizador'
-          };
-          setProfile(defaultProfile);
-          setIsAuthenticated(true);
-          setLoading(false);
         }
       }
     } catch (error) {
@@ -283,6 +330,13 @@ export function AuthProvider({ children }) {
     return requiredRoles.includes(profile.role);
   };
 
+  // Função para recarregar o perfil (útil após alterações)
+  const reloadProfile = async () => {
+    if (user?.id) {
+      await loadUserProfile(user.id);
+    }
+  };
+
   const value = {
     user,
     profile,
@@ -294,6 +348,7 @@ export function AuthProvider({ children }) {
     getAccessToken,
     hasRole,
     hasAnyRole,
+    reloadProfile,
     roleLabel: profile ? roleLabels[profile.role] || profile.role : null,
   };
 

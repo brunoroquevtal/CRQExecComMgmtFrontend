@@ -3,18 +3,19 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 function Layout() {
-  const { profile, roleLabel, logout } = useAuth();
+  const { profile, roleLabel, logout, hasRole } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false); // Fechado por padrão em mobile
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
+  
   const menuItems = [
     { path: '/dashboard', label: 'Dashboard', icon: '📊' },
     { path: '/dados', label: 'Dados', icon: '✏️' },
     { path: '/planejamento', label: 'Planejamento', icon: '📅' },
     { path: '/comunicacao', label: 'Comunicação', icon: '💬' },
+    { path: '/usuarios', label: 'Usuários', icon: '👥', adminOnly: true },
     { path: '/configuracoes', label: 'Configurações', icon: '⚙️' }
-  ];
+  ].filter(item => !item.adminOnly || hasRole('administrador'));
 
   const roleLabels = {
     administrador: 'Administrador',
