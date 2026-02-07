@@ -134,7 +134,7 @@ router.get('/profile', requireAuth, async (req, res) => {
       });
     }
 
-    // Se Supabase não está configurado, retornar perfil básico
+    // Se Supabase não está configurado, retornar perfil básico do req.user
     if (!supabaseAdmin) {
       return res.json({
         id: req.user.id,
@@ -144,46 +144,64 @@ router.get('/profile', requireAuth, async (req, res) => {
       });
     }
 
-    // Buscar perfil do Supabase
-    const { data, error } = await supabaseAdmin
-      .from('user_profiles')
-      .select('*')
-      .eq('id', req.user.id)
-      .single();
+    // Tentar buscar perfil do Supabase
+    let profileData = null;
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('user_profiles')
+        .select('*')
+        .eq('id', req.user.id)
+        .single();
 
-    if (error || !data) {
-      // Se perfil não existe, criar um padrão
-      const defaultProfile = {
-        id: req.user.id,
-        email: req.user.email,
-        role: 'visualizador',
-        full_name: req.user.email?.split('@')[0] || 'Usuário',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      // Tentar criar o perfil no Supabase
-      try {
-        const { data: newProfile, error: insertError } = await supabaseAdmin
-          .from('user_profiles')
-          .insert(defaultProfile)
-          .select()
-          .single();
-
-        if (!insertError && newProfile) {
-          return res.json(newProfile);
-        }
-      } catch (insertErr) {
-        console.warn('Erro ao criar perfil padrão:', insertErr);
+      if (!error && data) {
+        profileData = data;
       }
-
-      // Retornar perfil padrão mesmo se não conseguir criar no Supabase
-      return res.json(defaultProfile);
+    } catch (supabaseError) {
+      console.warn('Erro ao buscar perfil do Supabase (continuando com perfil padrão):', supabaseError.message);
     }
 
-    res.json(data);
+    // Se encontrou perfil, retornar
+    if (profileData) {
+      return res.json(profileData);
+    }
+
+    // Se não encontrou, tentar criar perfil padrão
+    const defaultProfile = {
+      id: req.user.id,
+      email: req.user.email,
+      role: 'visualizador',
+      full_name: req.user.email?.split('@')[0] || 'Usuário',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    try {
+      const { data: newProfile, error: insertError } = await supabaseAdmin
+        .from('user_profiles')
+        .insert(defaultProfile)
+        .select()
+        .single();
+
+      if (!insertError && newProfile) {
+        return res.json(newProfile);
+      }
+    } catch (insertErr) {
+      console.warn('Erro ao criar perfil padrão no Supabase (retornando perfil padrão):', insertErr.message);
+    }
+
+    // Retornar perfil padrão mesmo se não conseguir criar no Supabase
+    return res.json(defaultProfile);
   } catch (error) {
     console.error('Erro ao obter perfil:', error);
+    // Em caso de erro, retornar perfil básico do req.user se disponível
+    if (req.user) {
+      return res.json({
+        id: req.user.id,
+        email: req.user.email,
+        role: req.user.role || 'visualizador',
+        full_name: req.user.full_name || req.user.email?.split('@')[0] || 'Usuário'
+      });
+    }
     res.status(500).json({ error: 'Erro ao obter perfil' });
   }
 });

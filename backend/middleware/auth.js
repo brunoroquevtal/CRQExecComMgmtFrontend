@@ -40,13 +40,24 @@ async function requireAuth(req, res, next) {
     }
 
     // Buscar perfil do usuário
-    const { data: profile, error: profileError } = await supabaseClient
-      .from('user_profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
+    let profile = null;
+    let profileError = null;
+    
+    try {
+      const result = await supabaseClient
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      profile = result.data;
+      profileError = result.error;
+    } catch (err) {
+      console.warn('[AUTH] Erro ao buscar perfil do Supabase:', err.message);
+      profileError = err;
+    }
 
-    // Se perfil não existe, criar um padrão ou usar dados básicos
+    // Se perfil não existe ou houve erro, criar um padrão ou usar dados básicos
     if (profileError || !profile) {
       // Criar perfil padrão se não existir
       try {
@@ -74,6 +85,7 @@ async function requireAuth(req, res, next) {
           };
         } else {
           // Se não conseguir criar, usar perfil básico
+          console.warn('[AUTH] Não foi possível criar perfil no Supabase, usando perfil básico');
           req.user = {
             id: user.id,
             email: user.email,
@@ -82,7 +94,7 @@ async function requireAuth(req, res, next) {
           };
         }
       } catch (createError) {
-        console.warn('Erro ao criar perfil padrão:', createError);
+        console.warn('[AUTH] Erro ao criar perfil padrão:', createError.message);
         // Usar perfil básico em caso de erro
         req.user = {
           id: user.id,
