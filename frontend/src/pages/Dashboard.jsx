@@ -76,95 +76,24 @@ function Dashboard() {
     }
   };
 
-  // Filtrar dados baseado na aba selecionada
-  const getFilteredData = () => {
-    if (!statistics) return null;
-
-    if (activeTab === 'all') {
-      return statistics;
+  // Função para parsear data (definida antes de ser usada)
+  const parseDate = useCallback((dateValue) => {
+    if (!dateValue) return null;
+    if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
+      return dateValue;
     }
-
-    // Filtrar por CRQ selecionado
-    const filteredStats = {
-      geral: {
-        total: 0,
-        concluidas: 0,
-        em_execucao_no_prazo: 0,
-        em_execucao_fora_prazo: 0,
-        a_iniciar_no_prazo: 0,
-        a_iniciar_fora_prazo: 0
-      },
-      por_sequencia: {}
-    };
-
-    if (statistics.por_sequencia[activeTab]) {
-      const seqStats = statistics.por_sequencia[activeTab];
-      filteredStats.geral = { ...seqStats };
-      filteredStats.por_sequencia[activeTab] = seqStats;
+    if (typeof dateValue === 'string') {
+      try {
+        const date = new Date(dateValue);
+        if (!isNaN(date.getTime())) {
+          return date;
+        }
+      } catch (e) {
+        return null;
+      }
     }
-
-    return filteredStats;
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-vtal-secondary"></div>
-      </div>
-    );
-  }
-
-  const filteredStats = getFilteredData();
-
-  if (!filteredStats || !statistics) {
-    return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-        <p className="text-yellow-800">Nenhum dado disponível. Faça upload de um arquivo Excel.</p>
-      </div>
-    );
-  }
-
-  const { geral, por_sequencia } = filteredStats;
-
-  // Garantir que geral existe e tem todas as propriedades
-  const geralSafe = geral || {
-    total: 0,
-    concluidas: 0,
-    em_execucao_no_prazo: 0,
-    em_execucao_fora_prazo: 0,
-    a_iniciar_no_prazo: 0,
-    a_iniciar_fora_prazo: 0
-  };
-
-  // Dados para gráfico de pizza (status)
-  const statusData = [
-    { name: 'Concluídas', value: geralSafe.concluidas || 0, color: '#28a745' },
-    { name: 'Em Execução no Prazo', value: geralSafe.em_execucao_no_prazo || 0, color: '#3B82F6' },
-    { name: 'Em Execução Fora do Prazo', value: geralSafe.em_execucao_fora_prazo || 0, color: '#EF4444' },
-    { name: 'A Iniciar no Prazo', value: geralSafe.a_iniciar_no_prazo || 0, color: '#DBEAFE' },
-    { name: 'A Iniciar Fora do Prazo', value: geralSafe.a_iniciar_fora_prazo || 0, color: '#FED7AA' }
-  ].filter(item => item.value > 0);
-
-  // Dados para gráfico de barras (por sequência)
-  const sequenciaData = Object.entries(por_sequencia || {}).map(([seq, stats]) => {
-    // Garantir que stats existe
-    const statsSafe = stats || {
-      concluidas: 0,
-      em_execucao_no_prazo: 0,
-      em_execucao_fora_prazo: 0,
-      a_iniciar_no_prazo: 0,
-      a_iniciar_fora_prazo: 0
-    };
-    
-    return {
-      sequencia: seq,
-      concluidas: statsSafe.concluidas || 0,
-      em_execucao_no_prazo: statsSafe.em_execucao_no_prazo || 0,
-      em_execucao_fora_prazo: statsSafe.em_execucao_fora_prazo || 0,
-      a_iniciar_no_prazo: statsSafe.a_iniciar_no_prazo || 0,
-      a_iniciar_fora_prazo: statsSafe.a_iniciar_fora_prazo || 0
-    };
-  });
+    return null;
+  }, []);
 
   // Filtrar atividades por status e CRQ
   const getFilteredActivities = useCallback((statusFilter) => {
@@ -203,25 +132,6 @@ function Dashboard() {
   // Filtrar atividades "Em Andamento"
   // Inclui: Em execução no prazo
   const atividadesEmAndamento = useMemo(() => getFilteredActivities('em execução no prazo'), [getFilteredActivities]);
-
-  // Função para parsear data (definida antes de ser usada)
-  const parseDate = useCallback((dateValue) => {
-    if (!dateValue) return null;
-    if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
-      return dateValue;
-    }
-    if (typeof dateValue === 'string') {
-      try {
-        const date = new Date(dateValue);
-        if (!isNaN(date.getTime())) {
-          return date;
-        }
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
-  }, []);
 
   // Filtrar atividades "Em Atraso"
   // Inclui: 
@@ -323,6 +233,96 @@ function Dashboard() {
   const atividadesEmExecucaoForaPrazoFiltered = useMemo(() => filterByRollback(atividadesEmExecucaoForaPrazo), [atividadesEmExecucaoForaPrazo, filterByRollback]);
   const atividadesAIniciarNoPrazoFiltered = useMemo(() => filterByRollback(atividadesAIniciarNoPrazo), [atividadesAIniciarNoPrazo, filterByRollback]);
   const atividadesAIniciarForaPrazoFiltered = useMemo(() => filterByRollback(atividadesAIniciarForaPrazo), [atividadesAIniciarForaPrazo, filterByRollback]);
+
+  // Filtrar dados baseado na aba selecionada
+  const getFilteredData = () => {
+    if (!statistics) return null;
+
+    if (activeTab === 'all') {
+      return statistics;
+    }
+
+    // Filtrar por CRQ selecionado
+    const filteredStats = {
+      geral: {
+        total: 0,
+        concluidas: 0,
+        em_execucao_no_prazo: 0,
+        em_execucao_fora_prazo: 0,
+        a_iniciar_no_prazo: 0,
+        a_iniciar_fora_prazo: 0
+      },
+      por_sequencia: {}
+    };
+
+    if (statistics.por_sequencia[activeTab]) {
+      const seqStats = statistics.por_sequencia[activeTab];
+      filteredStats.geral = { ...seqStats };
+      filteredStats.por_sequencia[activeTab] = seqStats;
+    }
+
+    return filteredStats;
+  };
+
+  const filteredStats = getFilteredData();
+  const { geral, por_sequencia } = filteredStats || {};
+
+  // Garantir que geral existe e tem todas as propriedades
+  const geralSafe = geral || {
+    total: 0,
+    concluidas: 0,
+    em_execucao_no_prazo: 0,
+    em_execucao_fora_prazo: 0,
+    a_iniciar_no_prazo: 0,
+    a_iniciar_fora_prazo: 0
+  };
+
+  // Dados para gráfico de pizza (status)
+  const statusData = [
+    { name: 'Concluídas', value: geralSafe.concluidas || 0, color: '#28a745' },
+    { name: 'Em Execução no Prazo', value: geralSafe.em_execucao_no_prazo || 0, color: '#3B82F6' },
+    { name: 'Em Execução Fora do Prazo', value: geralSafe.em_execucao_fora_prazo || 0, color: '#EF4444' },
+    { name: 'A Iniciar no Prazo', value: geralSafe.a_iniciar_no_prazo || 0, color: '#DBEAFE' },
+    { name: 'A Iniciar Fora do Prazo', value: geralSafe.a_iniciar_fora_prazo || 0, color: '#FED7AA' }
+  ].filter(item => item.value > 0);
+
+  // Dados para gráfico de barras (por sequência)
+  const sequenciaData = Object.entries(por_sequencia || {}).map(([seq, stats]) => {
+    // Garantir que stats existe
+    const statsSafe = stats || {
+      concluidas: 0,
+      em_execucao_no_prazo: 0,
+      em_execucao_fora_prazo: 0,
+      a_iniciar_no_prazo: 0,
+      a_iniciar_fora_prazo: 0
+    };
+    
+    return {
+      sequencia: seq,
+      concluidas: statsSafe.concluidas || 0,
+      em_execucao_no_prazo: statsSafe.em_execucao_no_prazo || 0,
+      em_execucao_fora_prazo: statsSafe.em_execucao_fora_prazo || 0,
+      a_iniciar_no_prazo: statsSafe.a_iniciar_no_prazo || 0,
+      a_iniciar_fora_prazo: statsSafe.a_iniciar_fora_prazo || 0
+    };
+  });
+
+  // Retornos condicionais (após todos os hooks)
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-vtal-secondary"></div>
+      </div>
+    );
+  }
+
+  if (!filteredStats || !statistics) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+        <p className="text-yellow-800">Nenhum dado disponível. Faça upload de um arquivo Excel.</p>
+      </div>
+    );
+  }
 
   // Função para obter cor do status baseado nos novos status
   const getStatusColor = (status) => {
