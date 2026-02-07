@@ -53,7 +53,19 @@ function Dashboard() {
       setLoading(false);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
-      toast.error('Erro ao carregar dados do dashboard');
+      
+      // Mensagem de erro mais detalhada
+      let errorMessage = 'Erro ao carregar dados do dashboard';
+      if (error.response) {
+        errorMessage = `Erro ${error.response.status}: ${error.response.data?.error || error.message}`;
+      } else if (error.request) {
+        errorMessage = 'Não foi possível conectar ao backend. Verifique se a API está configurada corretamente.';
+        console.error('URL da API:', import.meta.env.VITE_API_URL || '/api (padrão)');
+      } else {
+        errorMessage = `Erro: ${error.message}`;
+      }
+      
+      toast.error(errorMessage);
       setLoading(false);
     }
   };
