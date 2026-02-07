@@ -14,13 +14,26 @@ const api = axios.create({
   timeout: 300000 // 5 minutos (para uploads grandes)
 });
 
-// Interceptor para requisições - não definir Content-Type para FormData
+// Interceptor para requisições - adicionar token de autenticação
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
     // Se for FormData, remover Content-Type para o browser definir automaticamente
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type'];
     }
+
+    // Adicionar token de autenticação se disponível
+    if (supabase) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          config.headers.Authorization = `Bearer ${session.access_token}`;
+        }
+      } catch (error) {
+        console.warn('Erro ao obter token:', error);
+      }
+    }
+
     return config;
   },
   (error) => {

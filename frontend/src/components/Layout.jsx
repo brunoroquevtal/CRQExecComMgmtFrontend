@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 function Layout() {
-  const { user, logout } = useAuth();
+  const { profile, roleLabel, logout } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false); // Fechado por padrão em mobile
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -16,9 +16,9 @@ function Layout() {
     { path: '/configuracoes', label: 'Configurações', icon: '⚙️' }
   ];
 
-  const userTypeLabels = {
-    admin: 'Administrador',
-    lider: 'Líder da Mudança',
+  const roleLabels = {
+    administrador: 'Administrador',
+    lider_mudanca: 'Líder da Mudança',
     visualizador: 'Visualizador'
   };
 
@@ -60,12 +60,12 @@ function Layout() {
         <div className={`p-4 border-b border-vtal-dark/50 ${(sidebarOpen || mobileMenuOpen) ? '' : 'text-center'}`}>
           <div className="flex items-center space-x-2">
             <div className="w-10 h-10 rounded-full bg-vtal-secondary flex items-center justify-center font-bold">
-              {user?.name?.charAt(0) || 'U'}
+              {profile?.full_name?.charAt(0) || profile?.email?.charAt(0) || 'U'}
             </div>
             {(sidebarOpen || mobileMenuOpen) && (
               <div className="flex-1 min-w-0">
-                <p className="font-semibold truncate">{user?.name}</p>
-                <p className="text-sm text-vtal-light/80 truncate">{userTypeLabels[user?.type] || 'Usuário'}</p>
+                <p className="font-semibold truncate">{profile?.full_name || profile?.email || 'Usuário'}</p>
+                <p className="text-sm text-vtal-light/80 truncate">{roleLabel || 'Usuário'}</p>
               </div>
             )}
           </div>

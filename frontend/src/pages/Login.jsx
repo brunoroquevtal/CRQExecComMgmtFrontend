@@ -1,29 +1,41 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-hot-toast';
 
 function Login() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Verificar mensagem de redirecionamento
+  useEffect(() => {
+    if (location.state?.message) {
+      toast.success(location.state.message);
+    }
+  }, [location]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    // Simular delay de autenticação
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    if (login(username, password)) {
-      navigate('/dashboard');
-    } else {
-      setError('Usuário ou senha inválidos');
+    try {
+      const success = await login(email, password);
+      if (success) {
+        navigate('/dashboard');
+      } else {
+        setError('Email ou senha inválidos');
+      }
+    } catch (err) {
+      setError(err.message || 'Erro ao fazer login');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -37,16 +49,16 @@ function Login() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-vtal-gray-700 mb-2">
-              Usuário
+            <label htmlFor="email" className="block text-sm font-medium text-vtal-gray-700 mb-2">
+              Email
             </label>
             <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-3 border border-vtal-gray-300 rounded-lg focus:ring-2 focus:ring-vtal-secondary focus:border-transparent transition-all"
-              placeholder="Digite seu usuário"
+              placeholder="seu.email@vtal.com"
               required
             />
           </div>
@@ -81,22 +93,13 @@ function Login() {
           </button>
         </form>
 
-        <div className="mt-6 pt-6 border-t border-vtal-gray-200">
-          <p className="text-sm text-vtal-gray-600 text-center mb-2">Usuários de teste:</p>
-          <div className="bg-vtal-gray-50 rounded-lg p-4 space-y-1 text-xs">
-            <div className="flex justify-between">
-              <span className="font-medium">admin</span>
-              <span className="text-vtal-gray-500">admin123</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="font-medium">lider</span>
-              <span className="text-vtal-gray-500">lider123</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="font-medium">visualizador</span>
-              <span className="text-vtal-gray-500">view123</span>
-            </div>
-          </div>
+        <div className="mt-6 pt-6 border-t border-vtal-gray-200 text-center">
+          <p className="text-sm text-vtal-gray-600">
+            Não tem uma conta?{' '}
+            <Link to="/signup" className="text-vtal-secondary hover:text-vtal-primary font-medium">
+              Cadastre-se
+            </Link>
+          </p>
         </div>
       </div>
     </div>

@@ -25,6 +25,13 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Rotas de autenticação
+const authRoutes = require('./routes/auth');
+app.use('/api/auth', authRoutes);
+
+// Middleware de autenticação
+const { requireAuth, requireRole, optionalAuth } = require('./middleware/auth');
+
 // Configurar multer para upload de arquivos
 const upload = multer({ 
   dest: uploadsDir,
@@ -313,8 +320,8 @@ app.post('/api/upload-excel', upload.single('file'), async (req, res) => {
   }
 });
 
-// Obter todas as atividades
-app.get('/api/activities', async (req, res) => {
+// Obter todas as atividades (todos os usuários autenticados podem ver)
+app.get('/api/activities', requireAuth, async (req, res) => {
   try {
     const excelData = await dbManager.loadExcelData();
     const controlData = await dbManager.getAllActivitiesControl();
@@ -727,8 +734,8 @@ app.put('/api/activity', async (req, res) => {
   }
 });
 
-// Obter estatísticas
-app.get('/api/statistics', async (req, res) => {
+// Obter estatísticas (todos os usuários autenticados podem ver)
+app.get('/api/statistics', requireAuth, async (req, res) => {
   try {
     const excelData = await dbManager.loadExcelData();
     const controlData = await dbManager.getAllActivitiesControl();

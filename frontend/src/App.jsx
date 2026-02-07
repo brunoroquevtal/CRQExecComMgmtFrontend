@@ -8,18 +8,43 @@ import Communication from './pages/Communication';
 import Settings from './pages/Settings';
 import Planning from './pages/Planning';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import './App.css';
 
-function ProtectedRoute({ children }) {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? children : <Navigate to="/login" />;
+function ProtectedRoute({ children, requiredRole = null, requiredAnyRole = null }) {
+  const { isAuthenticated, loading, hasRole, hasAnyRole } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-vtal-secondary"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+
+  // Verificar role específica
+  if (requiredRole && !hasRole(requiredRole)) {
+    return <Navigate to="/dashboard" />;
+  }
+
+  // Verificar se tem uma das roles
+  if (requiredAnyRole && !hasAnyRole(requiredAnyRole)) {
+    return <Navigate to="/dashboard" />;
+  }
+
+  return children;
 }
 
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
       <Route
         path="/"
         element={
@@ -30,10 +55,24 @@ function AppRoutes() {
       >
         <Route index element={<Navigate to="/dashboard" />} />
         <Route path="dashboard" element={<Dashboard />} />
-        <Route path="dados" element={<DataEditor />} />
+        <Route 
+          path="dados" 
+          element={
+            <ProtectedRoute requiredAnyRole={['lider_mudanca', 'administrador']}>
+              <DataEditor />
+            </ProtectedRoute>
+          } 
+        />
         <Route path="planejamento" element={<Planning />} />
         <Route path="comunicacao" element={<Communication />} />
-        <Route path="configuracoes" element={<Settings />} />
+        <Route 
+          path="configuracoes" 
+          element={
+            <ProtectedRoute requiredRole="administrador">
+              <Settings />
+            </ProtectedRoute>
+          } 
+        />
       </Route>
     </Routes>
   );
