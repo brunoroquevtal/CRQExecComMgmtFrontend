@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 function UserManagement() {
-  const { hasRole } = useAuth();
+  const { hasRole, reloadProfile, profile: currentUserProfile } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all, pending, approved
@@ -38,6 +38,12 @@ function UserManagement() {
       await api.put(`/auth/users/${userId}/role`, { role: newRole });
       toast.success('Role atualizada com sucesso!');
       loadUsers(); // Recarregar lista
+      
+      // Se o usuário atualizou seu próprio role, recarregar o perfil
+      if (currentUserProfile?.id === userId) {
+        await reloadProfile(true); // Forçar busca do Supabase
+        toast.success('Seu perfil foi atualizado! Recarregue a página se necessário.');
+      }
     } catch (error) {
       console.error('Erro ao atualizar role:', error);
       toast.error(error.response?.data?.error || 'Erro ao atualizar role');

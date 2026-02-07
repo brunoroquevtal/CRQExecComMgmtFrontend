@@ -336,9 +336,10 @@ export function AuthProvider({ children }) {
   };
 
   // Função para recarregar o perfil (útil após alterações)
-  const reloadProfile = async () => {
+  // forceSupabase: se true, busca diretamente do Supabase ignorando o backend
+  const reloadProfile = async (forceSupabase = true) => {
     if (user?.id) {
-      await loadUserProfile(user.id);
+      await loadUserProfile(user.id, forceSupabase);
     }
   };
 
