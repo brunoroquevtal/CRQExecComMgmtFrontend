@@ -13,9 +13,14 @@ function Layout() {
     { path: '/dados', label: 'Dados', icon: '✏️' },
     { path: '/planejamento', label: 'Planejamento', icon: '📅' },
     { path: '/comunicacao', label: 'Comunicação', icon: '💬' },
+    { path: '/atividades-ocultas', label: 'Atividades Ocultas', icon: '👁️', leaderOnly: true },
     { path: '/usuarios', label: 'Usuários', icon: '👥', adminOnly: true },
     { path: '/configuracoes', label: 'Configurações', icon: '⚙️' }
-  ].filter(item => !item.adminOnly || hasRole('administrador'));
+  ].filter(item => {
+    if (item.adminOnly && !hasRole('administrador')) return false;
+    if (item.leaderOnly && !hasRole('administrador') && !hasRole('lider_mudanca')) return false;
+    return true;
+  });
 
   const roleLabels = {
     administrador: 'Administrador',

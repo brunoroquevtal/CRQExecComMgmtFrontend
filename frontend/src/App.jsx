@@ -8,6 +8,7 @@ import Communication from './pages/Communication';
 import Settings from './pages/Settings';
 import Planning from './pages/Planning';
 import UserManagement from './pages/UserManagement';
+import HiddenActivities from './pages/HiddenActivities';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -71,6 +72,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute requiredRole="administrador">
               <UserManagement />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="atividades-ocultas" 
+          element={
+            <ProtectedRoute requiredAnyRole={['lider_mudanca', 'administrador']}>
+              <HiddenActivities />
             </ProtectedRoute>
           } 
         />
