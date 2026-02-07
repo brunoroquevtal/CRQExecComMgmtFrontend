@@ -944,7 +944,8 @@ def create_activity_via_api(activity: Dict, sync_timestamp: Optional[str] = None
         
         if response is None:
             # Erro de conexão, timeout ou outro erro que não retornou resposta
-            logger.warning(f"[SYNC] ❌ Falha ao processar: Não foi possível conectar à API - Seq {seq}, CRQ {sequencia}, Atividade: {atividade_texto[:100]}, Status: {status_texto}")
+            logger.error(f"[SYNC] ❌ ERRO DE CONEXÃO: Não foi possível conectar à API - Seq {seq}, CRQ {sequencia}, Atividade: {atividade_texto[:100]}, Status: {status_texto}")
+            logger.error(f"[SYNC] ❌ Esta atividade foi DESCARTADA devido a erro de conexão")
             return False
         
         if response.status_code == 200:
@@ -957,11 +958,13 @@ def create_activity_via_api(activity: Dict, sync_timestamp: Optional[str] = None
                     return True
                 else:
                     error_msg = result.get('message', 'Erro desconhecido')
-                    logger.warning(f"[SYNC] ❌ Falha ao processar: Seq {seq}, CRQ {sequencia}, Atividade: {atividade_texto[:100]}, Status: {status_texto}, Erro: {error_msg}")
+                    logger.error(f"[SYNC] ❌ REJEITADA PELO BACKEND (success=false): Seq {seq}, CRQ {sequencia}, Atividade: {atividade_texto[:100]}, Status: {status_texto}")
+                    logger.error(f"[SYNC] ❌ Motivo da rejeição: {error_msg}")
                     return False
             except ValueError as json_err:
-                logger.error(f"[ERRO] Resposta não é JSON válido: {json_err}")
-                logger.error(f"Conteúdo da resposta: {response.text[:500] if response.text else 'Sem conteúdo'}")
+                logger.error(f"[SYNC] ❌ ERRO AO PROCESSAR RESPOSTA: Resposta não é JSON válido - Seq {seq}, CRQ {sequencia}")
+                logger.error(f"[SYNC] ❌ Erro: {json_err}")
+                logger.error(f"[SYNC] ❌ Conteúdo da resposta: {response.text[:500] if response.text else 'Sem conteúdo'}")
                 return False
         else:
             # Tentar extrair mensagem de erro da resposta
@@ -974,7 +977,17 @@ def create_activity_via_api(activity: Dict, sync_timestamp: Optional[str] = None
                 if response.text:
                     error_msg = response.text[:200]
             
-            logger.warning(f"[SYNC] ❌ Falha ao processar: HTTP {response.status_code} - Seq {seq}, CRQ {sequencia}, Atividade: {atividade_texto[:100]}, Status: {status_texto}, Erro: {error_msg}")
+            # Categorizar erro por status code
+            if response.status_code == 400:
+                logger.error(f"[SYNC] ❌ REJEITADA PELO BACKEND (HTTP 400 - Bad Request): Seq {seq}, CRQ {sequencia}, Atividade: {atividade_texto[:100]}, Status: {status_texto}")
+                logger.error(f"[SYNC] ❌ Motivo da rejeição: {error_msg}")
+            elif response.status_code == 500:
+                logger.error(f"[SYNC] ❌ ERRO NO BACKEND (HTTP 500 - Internal Server Error): Seq {seq}, CRQ {sequencia}, Atividade: {atividade_texto[:100]}, Status: {status_texto}")
+                logger.error(f"[SYNC] ❌ Erro: {error_msg}")
+            else:
+                logger.error(f"[SYNC] ❌ REJEITADA PELO BACKEND (HTTP {response.status_code}): Seq {seq}, CRQ {sequencia}, Atividade: {atividade_texto[:100]}, Status: {status_texto}")
+                logger.error(f"[SYNC] ❌ Motivo: {error_msg}")
+            
             return False
     except Exception as e:
         logger.error(f"[SYNC] ❌ Erro ao processar atividade: Seq {seq}, CRQ {sequencia}, Atividade: {atividade_texto[:100]}, Status: {status_texto}, Erro: {e}")
@@ -1180,6 +1193,23 @@ def perform_sync(excel_path: str, use_bulk_mode: bool) -> bool:
         return False
     
     logger.info(f"\nTotal de atividades no Excel: {len(all_activities)}")
+    print(f"\n[ESTATÍSTICAS INICIAIS] Total de atividades extraídas do Excel: {len(all_activities)}")
+    
+    # Contadores detalhados para rastreamento
+    atividades_validas = 0
+    atividades_invalidas = 0
+    atividades_enviadas = 0
+    atividades_aceitas_backend = 0
+    atividades_rejeitadas_backend = 0
+    motivos_rejeicao = {
+        'seq_ou_sequencia_faltando': 0,
+        'atividade_vazia': 0,
+        'sem_inicio_ou_fim': 0,
+        'erro_conexao': 0,
+        'erro_backend_400': 0,
+        'erro_backend_500': 0,
+        'outros_erros': 0
+    }
     
     # Coletar sequências processadas para verificação de exclusão
     sequencias_processadas = set()
@@ -1195,7 +1225,7 @@ def perform_sync(excel_path: str, use_bulk_mode: bool) -> bool:
         failed_count = result.get("failed", 0)
     else:
         logger.info(f"\nProcessando {len(all_activities)} atividades individualmente...")
-        print(f"\nProcessando {len(all_activities)} atividades individualmente...")
+        print(f"\n[PROCESSAMENTO] Processando {len(all_activities)} atividades individualmente...")
         print(f"Progresso: 0/{len(all_activities)}", end="", flush=True)
         
         for idx, activity in enumerate(all_activities, 1):
@@ -1204,9 +1234,49 @@ def perform_sync(excel_path: str, use_bulk_mode: bool) -> bool:
                 print(f"\n[INTERROMPIDO] Processamento parado na atividade {idx}/{len(all_activities)}")
                 break
             
-            if create_activity_via_api(activity, sync_timestamp):
+            # Validar atividade antes de enviar
+            seq = activity.get('seq')
+            sequencia = activity.get('sequencia')
+            atividade_texto = activity.get('atividade', '')
+            inicio = activity.get('inicio')
+            fim = activity.get('fim')
+            
+            # Validação 1: seq e sequencia
+            if not seq or not sequencia:
+                atividades_invalidas += 1
+                motivos_rejeicao['seq_ou_sequencia_faltando'] += 1
+                logger.warning(f"[VALIDAÇÃO] ❌ Atividade {idx}/{len(all_activities)} descartada: Seq ou sequencia faltando - Seq: {seq}, CRQ: {sequencia}, Atividade: {atividade_texto[:50]}")
+                failed_count += 1
+                continue
+            
+            # Validação 2: atividade não vazia
+            if not atividade_texto or atividade_texto.strip() == '':
+                atividades_invalidas += 1
+                motivos_rejeicao['atividade_vazia'] += 1
+                logger.warning(f"[VALIDAÇÃO] ❌ Atividade {idx}/{len(all_activities)} descartada: Atividade vazia - Seq: {seq}, CRQ: {sequencia}")
+                failed_count += 1
+                continue
+            
+            # Validação 3: início ou fim
+            if not inicio and not fim:
+                atividades_invalidas += 1
+                motivos_rejeicao['sem_inicio_ou_fim'] += 1
+                logger.warning(f"[VALIDAÇÃO] ❌ Atividade {idx}/{len(all_activities)} descartada: Sem início ou fim planejado - Seq: {seq}, CRQ: {sequencia}, Atividade: {atividade_texto[:50]}")
+                failed_count += 1
+                continue
+            
+            # Atividade passou todas as validações
+            atividades_validas += 1
+            
+            # Tentar enviar à API
+            atividades_enviadas += 1
+            resultado = create_activity_via_api(activity, sync_timestamp)
+            
+            if resultado:
+                atividades_aceitas_backend += 1
                 created_count += 1
             else:
+                atividades_rejeitadas_backend += 1
                 failed_count += 1
             
             processed_count += 1
@@ -1215,9 +1285,40 @@ def perform_sync(excel_path: str, use_bulk_mode: bool) -> bool:
                 time.sleep(0.1)
             
             if idx % 10 == 0 or idx == len(all_activities) or interrupted:
-                print(f"\rProgresso: {idx}/{len(all_activities)} (OK: {created_count}, Falhas: {failed_count})", end="", flush=True)
+                print(f"\rProgresso: {idx}/{len(all_activities)} (Válidas: {atividades_validas}, Enviadas: {atividades_enviadas}, Aceitas: {atividades_aceitas_backend}, Rejeitadas: {atividades_rejeitadas_backend})", end="", flush=True)
         
         print()
+        
+        # Log detalhado de estatísticas
+        logger.info("\n" + "=" * 80)
+        logger.info("ESTATÍSTICAS DETALHADAS DE PROCESSAMENTO")
+        logger.info("=" * 80)
+        logger.info(f"Total de atividades no Excel: {len(all_activities)}")
+        logger.info(f"Atividades válidas (passaram validação): {atividades_validas}")
+        logger.info(f"Atividades inválidas (descartadas antes de enviar): {atividades_invalidas}")
+        logger.info(f"Atividades enviadas à API: {atividades_enviadas}")
+        logger.info(f"Atividades aceitas pelo backend: {atividades_aceitas_backend}")
+        logger.info(f"Atividades rejeitadas pelo backend: {atividades_rejeitadas_backend}")
+        logger.info("\nMotivos de descarte (antes de enviar):")
+        for motivo, count in motivos_rejeicao.items():
+            if count > 0:
+                logger.info(f"  - {motivo}: {count}")
+        logger.info("=" * 80)
+        
+        print("\n" + "=" * 80)
+        print("ESTATÍSTICAS DETALHADAS DE PROCESSAMENTO")
+        print("=" * 80)
+        print(f"Total de atividades no Excel: {len(all_activities)}")
+        print(f"Atividades válidas (passaram validação): {atividades_validas}")
+        print(f"Atividades inválidas (descartadas antes de enviar): {atividades_invalidas}")
+        print(f"Atividades enviadas à API: {atividades_enviadas}")
+        print(f"Atividades aceitas pelo backend: {atividades_aceitas_backend}")
+        print(f"Atividades rejeitadas pelo backend: {atividades_rejeitadas_backend}")
+        print("\nMotivos de descarte (antes de enviar):")
+        for motivo, count in motivos_rejeicao.items():
+            if count > 0:
+                print(f"  - {motivo}: {count}")
+        print("=" * 80)
     
     # Buscar atividades não sincronizadas (que não foram atualizadas nesta execução)
     if not interrupted and sequencias_processadas:
@@ -1260,23 +1361,33 @@ def perform_sync(excel_path: str, use_bulk_mode: bool) -> bool:
             logger.error(f"Erro ao verificar atividades não sincronizadas: {e}")
             print(f"[ERRO] Erro ao verificar atividades não sincronizadas: {e}")
     
-    print("\n" + "=" * 60)
-    print("RESUMO DA SINCRONIZACAO")
-    print("=" * 60)
+    print("\n" + "=" * 80)
+    print("RESUMO FINAL DA SINCRONIZACAO")
+    print("=" * 80)
     print(f"Total de atividades no Excel: {len(all_activities)}")
+    print(f"Atividades válidas (passaram validação): {atividades_validas if 'atividades_validas' in locals() else 'N/A'}")
+    print(f"Atividades inválidas (descartadas antes de enviar): {atividades_invalidas if 'atividades_invalidas' in locals() else 'N/A'}")
+    print(f"Atividades enviadas à API: {atividades_enviadas if 'atividades_enviadas' in locals() else 'N/A'}")
+    print(f"Atividades aceitas pelo backend: {atividades_aceitas_backend if 'atividades_aceitas_backend' in locals() else created_count}")
+    print(f"Atividades rejeitadas pelo backend: {atividades_rejeitadas_backend if 'atividades_rejeitadas_backend' in locals() else failed_count}")
     print(f"Processadas com sucesso: {created_count}")
     print(f"Excluidas (nao estao mais no Excel): {deleted_count}")
-    print(f"Falhas: {failed_count}")
-    print("=" * 60)
+    print(f"Falhas totais: {failed_count}")
+    print("=" * 80)
     
-    logger.info("\n" + "=" * 60)
-    logger.info("RESUMO DA SINCRONIZACAO")
-    logger.info("=" * 60)
+    logger.info("\n" + "=" * 80)
+    logger.info("RESUMO FINAL DA SINCRONIZACAO")
+    logger.info("=" * 80)
     logger.info(f"Total de atividades no Excel: {len(all_activities)}")
+    logger.info(f"Atividades válidas (passaram validação): {atividades_validas if 'atividades_validas' in locals() else 'N/A'}")
+    logger.info(f"Atividades inválidas (descartadas antes de enviar): {atividades_invalidas if 'atividades_invalidas' in locals() else 'N/A'}")
+    logger.info(f"Atividades enviadas à API: {atividades_enviadas if 'atividades_enviadas' in locals() else 'N/A'}")
+    logger.info(f"Atividades aceitas pelo backend: {atividades_aceitas_backend if 'atividades_aceitas_backend' in locals() else created_count}")
+    logger.info(f"Atividades rejeitadas pelo backend: {atividades_rejeitadas_backend if 'atividades_rejeitadas_backend' in locals() else failed_count}")
     logger.info(f"Processadas com sucesso: {created_count}")
     logger.info(f"Excluidas (nao estao mais no Excel): {deleted_count}")
-    logger.info(f"Falhas: {failed_count}")
-    logger.info("=" * 60)
+    logger.info(f"Falhas totais: {failed_count}")
+    logger.info("=" * 80)
     
     return True
 
