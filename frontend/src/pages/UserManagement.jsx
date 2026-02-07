@@ -41,7 +41,7 @@ function UserManagement() {
       
       // Se o usuário atualizou seu próprio role, recarregar o perfil
       if (currentUserProfile?.id === userId) {
-        await reloadProfile(true); // Forçar busca do Supabase
+        await reloadProfile(); // Recarregar perfil do backend
         toast.success('Seu perfil foi atualizado! Recarregue a página se necessário.');
       }
     } catch (error) {

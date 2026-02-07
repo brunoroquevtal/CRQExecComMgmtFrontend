@@ -59,38 +59,17 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Carregar perfil do usuário
-  // forceSupabase: se true, busca diretamente do Supabase ignorando o backend
-  const loadUserProfile = async (userId, forceSupabase = false) => {
+  // Carregar perfil do usuário via API do backend
+  const loadUserProfile = async (userId) => {
     try {
-      // Adicionar token ao header da API
+      // Obter sessão do Supabase para pegar o token
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         setLoading(false);
         return;
       }
 
-      // Se forceSupabase for true, buscar diretamente do Supabase (útil após atualizações)
-      if (forceSupabase) {
-        try {
-          const { data: supabaseProfile, error: supabaseError } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('id', userId)
-            .single();
-
-          if (!supabaseError && supabaseProfile) {
-            setProfile(supabaseProfile);
-            setIsAuthenticated(true);
-            setLoading(false);
-            return;
-          }
-        } catch (supabaseError) {
-          console.warn('Erro ao buscar perfil do Supabase:', supabaseError.message);
-        }
-      }
-
-      // Tentar buscar perfil via API do backend primeiro
+      // Buscar perfil via API do backend
       try {
         const response = await api.get('/auth/profile', {
           headers: {
@@ -98,125 +77,66 @@ export function AuthProvider({ children }) {
           }
         });
 
-        // Verificar se o perfil retornado tem role 'visualizador' padrão
-        // Se sim, tentar buscar diretamente do Supabase para garantir que temos o role atualizado
-        if (response.data && response.data.role === 'visualizador' && !forceSupabase) {
-          // Tentar buscar do Supabase para verificar se há atualização
-          try {
-            const { data: supabaseProfile, error: supabaseError } = await supabase
-              .from('user_profiles')
-              .select('*')
-              .eq('id', userId)
-              .single();
-
-            if (!supabaseError && supabaseProfile && supabaseProfile.role !== 'visualizador') {
-              // Perfil no Supabase tem role diferente - usar ele
-              setProfile(supabaseProfile);
-              setIsAuthenticated(true);
-              setLoading(false);
-              return;
-            }
-          } catch (supabaseCheckError) {
-            // Ignorar erro e usar perfil do backend
-          }
-        }
-
+        // Perfil obtido com sucesso do backend
         setProfile(response.data);
         setIsAuthenticated(true);
         setLoading(false);
-        return; // Sucesso, sair da função
+        return;
       } catch (profileError) {
-        // Se o endpoint não existir (404), tentar buscar diretamente do Supabase
-        if (profileError.response?.status === 404) {
-          // Endpoint não existe - buscar diretamente do Supabase
-          try {
-            const { data: supabaseProfile, error: supabaseError } = await supabase
-              .from('user_profiles')
-              .select('*')
-              .eq('id', userId)
-              .single();
-
-            if (!supabaseError && supabaseProfile) {
-              // Perfil encontrado no Supabase
-              setProfile(supabaseProfile);
-              setIsAuthenticated(true);
-              setLoading(false);
-              return;
-            } else {
-              // Erro ao buscar (tabela não existe, RLS bloqueando, etc.)
-              // Usar perfil padrão baseado nos dados do Supabase Auth
-              const defaultProfile = {
-                id: session.user.id,
-                email: session.user.email,
-                full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
-                role: 'visualizador' // Role padrão quando perfil não existe
-              };
-              setProfile(defaultProfile);
-              setIsAuthenticated(true);
-              setLoading(false);
-            }
-          } catch (supabaseDirectError) {
-            // Erro ao buscar do Supabase (500, tabela não existe, etc.) - usar perfil padrão
-            // Não logar erro 500 para não poluir o console
-            if (import.meta.env.DEV && supabaseDirectError.code !== 'PGRST116') {
-              console.info('Tabela user_profiles não disponível. Usando perfil padrão.');
-            }
-            const defaultProfile = {
-              id: session.user.id,
-              email: session.user.email,
-              full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
-              role: 'visualizador'
-            };
-            setProfile(defaultProfile);
-            setIsAuthenticated(true);
-            setLoading(false);
-          }
-        } else if (profileError.response?.status === 401) {
-          // Se erro 401, fazer logout
+        // Se erro 401, fazer logout
+        if (profileError.response?.status === 401) {
           await logout();
-        } else {
-          // Outro erro - tentar buscar do Supabase diretamente
-          try {
-            const { data: supabaseProfile, error: supabaseError } = await supabase
-              .from('user_profiles')
-              .select('*')
-              .eq('id', userId)
-              .single();
-
-            if (!supabaseError && supabaseProfile) {
-              setProfile(supabaseProfile);
-              setIsAuthenticated(true);
-              setLoading(false);
-            } else {
-              throw new Error('Perfil não encontrado');
-            }
-          } catch (supabaseError) {
-            // Fallback para perfil padrão (tabela não existe, RLS bloqueando, etc.)
-            // Não logar erros 500 para não poluir o console
-            if (import.meta.env.DEV && supabaseError.code !== 'PGRST116') {
-              console.info('Erro ao carregar perfil do Supabase. Usando perfil padrão.');
-            }
-            const defaultProfile = {
-              id: session.user.id,
-              email: session.user.email,
-              full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
-              role: 'visualizador'
-            };
-            setProfile(defaultProfile);
-            setIsAuthenticated(true);
-            setLoading(false);
-          }
+          return;
         }
+
+        // Se erro 404 ou 500, usar perfil padrão baseado nos dados do Supabase Auth
+        if (profileError.response?.status === 404 || profileError.response?.status === 500) {
+          console.warn('Endpoint /api/auth/profile não disponível. Usando perfil padrão.');
+          const defaultProfile = {
+            id: session.user.id,
+            email: session.user.email,
+            full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
+            role: 'visualizador'
+          };
+          setProfile(defaultProfile);
+          setIsAuthenticated(true);
+          setLoading(false);
+          return;
+        }
+
+        // Outro erro - usar perfil padrão
+        console.error('Erro ao carregar perfil do backend:', profileError.message);
+        const defaultProfile = {
+          id: session.user.id,
+          email: session.user.email,
+          full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
+          role: 'visualizador'
+        };
+        setProfile(defaultProfile);
+        setIsAuthenticated(true);
+        setLoading(false);
       }
     } catch (error) {
       console.error('Erro ao carregar perfil:', error);
-      // Se erro 401, fazer logout
-      if (error.response?.status === 401) {
-        await logout();
-      } else {
-        // Em caso de outro erro, permitir acesso com perfil padrão
-        setLoading(false);
+      // Em caso de erro, permitir acesso com perfil padrão se tiver sessão
+      if (supabase) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            const defaultProfile = {
+              id: session.user.id,
+              email: session.user.email,
+              full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
+              role: 'visualizador'
+            };
+            setProfile(defaultProfile);
+            setIsAuthenticated(true);
+          }
+        } catch (sessionError) {
+          // Ignorar erro
+        }
       }
+      setLoading(false);
     }
   };
 
@@ -380,10 +300,9 @@ export function AuthProvider({ children }) {
   };
 
   // Função para recarregar o perfil (útil após alterações)
-  // forceSupabase: se true, busca diretamente do Supabase ignorando o backend
-  const reloadProfile = async (forceSupabase = true) => {
+  const reloadProfile = async () => {
     if (user?.id) {
-      await loadUserProfile(user.id, forceSupabase);
+      await loadUserProfile(user.id);
     }
   };
 

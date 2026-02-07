@@ -1,5 +1,6 @@
 [build]
   base = "frontend"
+  # Não atualizar submodules - o backend não é necessário para o build do frontend
   command = "npm ci && npm run build"
   publish = "dist"
 
