@@ -63,12 +63,8 @@ desktop.ini
 # Streamlit
 .streamlit/secrets.toml
 
-# Backend (repositório separado)
-backend/
-# Exceção: arquivos de configuração do Netlify no backend
-!backend/netlify.toml
-!backend/netlify/
-!backend/netlify/**
+# Backend (repositório separado - agora é um git submodule)
+# Não ignorar - o submodule será gerenciado pelo Git
 
 # Node (Frontend)
 node_modules/
