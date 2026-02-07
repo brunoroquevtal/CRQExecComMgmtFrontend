@@ -23,25 +23,44 @@ export function AuthProvider({ children }) {
     visualizador: 'Visualizador'
   };
 
+  // Monitorar mudanças no perfil
+  useEffect(() => {
+    console.log('[AUTH] 📊 Estado do perfil atualizado:', {
+      profile: profile ? JSON.stringify(profile, null, 2) : 'null',
+      role: profile?.role,
+      email: profile?.email,
+      full_name: profile?.full_name,
+      isAuthenticated,
+      loading
+    });
+  }, [profile, isAuthenticated, loading]);
+
   // Verificar sessão ao carregar
   useEffect(() => {
+    console.log('[AUTH] 🔄 Verificando sessão ao carregar...');
     const token = localStorage.getItem(TOKEN_KEY);
     const storedUser = localStorage.getItem(USER_KEY);
+
+    console.log('[AUTH] Token encontrado:', !!token);
+    console.log('[AUTH] Usuário armazenado encontrado:', !!storedUser);
 
     if (token && storedUser) {
       try {
         const userData = JSON.parse(storedUser);
+        console.log('[AUTH] 📦 Dados do usuário armazenado:', JSON.stringify(userData, null, 2));
         setUser(userData);
         // Carregar perfil do backend
+        console.log('[AUTH] 🔄 Carregando perfil do backend...');
         loadUserProfile();
       } catch (error) {
-        console.error('Erro ao restaurar sessão:', error);
+        console.error('[AUTH] ❌ Erro ao restaurar sessão:', error);
         // Limpar dados inválidos
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
         setLoading(false);
       }
     } else {
+      console.log('[AUTH] ⚠️ Nenhuma sessão encontrada');
       setLoading(false);
     }
   }, []);
@@ -52,53 +71,89 @@ export function AuthProvider({ children }) {
   const loadUserProfile = async () => {
     try {
       const token = localStorage.getItem(TOKEN_KEY);
+      console.log('[AUTH] 🔍 Iniciando carregamento de perfil...');
+      console.log('[AUTH] Token presente:', !!token);
+      
       if (!token) {
+        console.warn('[AUTH] ⚠️ Token não encontrado, não é possível carregar perfil');
         setLoading(false);
         return;
       }
 
       // Buscar perfil via API do backend (não mais diretamente do Supabase)
       try {
+        console.log('[AUTH] 📡 Fazendo chamada para /api/auth/profile...');
+        console.log('[AUTH] URL da API:', api.defaults.baseURL || 'relativa');
+        console.log('[AUTH] Token (primeiros 20 chars):', token.substring(0, 20) + '...');
+        
         const response = await api.get('/auth/profile');
+        
+        console.log('[AUTH] ✅ Resposta recebida da API:');
+        console.log('[AUTH] Status:', response.status);
+        console.log('[AUTH] Headers:', response.headers);
+        console.log('[AUTH] 📦 Dados do perfil recebidos:', JSON.stringify(response.data, null, 2));
+        console.log('[AUTH] Role recebido:', response.data?.role);
+        console.log('[AUTH] Email recebido:', response.data?.email);
+        console.log('[AUTH] Full name recebido:', response.data?.full_name);
 
         // Perfil obtido com sucesso do backend
         setProfile(response.data);
         setIsAuthenticated(true);
         setLoading(false);
+        
+        console.log('[AUTH] ✅ Perfil carregado e setado com sucesso');
+        console.log('[AUTH] Profile state atual:', response.data);
         return;
       } catch (profileError) {
+        console.error('[AUTH] ❌ Erro ao carregar perfil:');
+        console.error('[AUTH] Tipo do erro:', profileError.constructor.name);
+        console.error('[AUTH] Mensagem:', profileError.message);
+        console.error('[AUTH] Status HTTP:', profileError.response?.status);
+        console.error('[AUTH] Dados da resposta de erro:', profileError.response?.data);
+        console.error('[AUTH] Headers da resposta:', profileError.response?.headers);
+        console.error('[AUTH] Stack completo:', profileError.stack);
+        
         // Se erro 401, fazer logout
         if (profileError.response?.status === 401) {
+          console.warn('[AUTH] ⚠️ Erro 401 - Token inválido, fazendo logout...');
           await logout();
           return;
         }
 
         // Se erro 404 ou 500, usar perfil padrão baseado nos dados do usuário armazenado
         if (profileError.response?.status === 404 || profileError.response?.status === 500) {
-          console.warn('Endpoint /api/auth/profile não disponível. Usando perfil padrão.');
+          console.warn('[AUTH] ⚠️ Endpoint /api/auth/profile não disponível (404/500). Usando perfil padrão.');
           const storedUser = localStorage.getItem(USER_KEY);
+          console.log('[AUTH] Usuário armazenado:', storedUser);
+          
           if (storedUser) {
             try {
               const userData = JSON.parse(storedUser);
+              console.log('[AUTH] Dados do usuário armazenado:', userData);
+              
               const defaultProfile = {
                 id: userData.id,
                 email: userData.email,
                 full_name: userData.email?.split('@')[0] || 'Usuário',
                 role: 'visualizador'
               };
+              
+              console.log('[AUTH] 📦 Perfil padrão criado:', JSON.stringify(defaultProfile, null, 2));
               setProfile(defaultProfile);
               setIsAuthenticated(true);
               setLoading(false);
               return;
             } catch (e) {
-              // Ignorar erro de parse
+              console.error('[AUTH] ❌ Erro ao fazer parse do usuário armazenado:', e);
             }
           }
         }
 
         // Outro erro - usar perfil padrão
-        console.error('Erro ao carregar perfil do backend:', profileError.message);
+        console.error('[AUTH] ❌ Erro ao carregar perfil do backend:', profileError.message);
         const storedUser = localStorage.getItem(USER_KEY);
+        console.log('[AUTH] Tentando usar perfil padrão. Usuário armazenado:', storedUser);
+        
         if (storedUser) {
           try {
             const userData = JSON.parse(storedUser);
@@ -108,16 +163,18 @@ export function AuthProvider({ children }) {
               full_name: userData.email?.split('@')[0] || 'Usuário',
               role: 'visualizador'
             };
+            console.log('[AUTH] 📦 Perfil padrão criado (fallback):', JSON.stringify(defaultProfile, null, 2));
             setProfile(defaultProfile);
             setIsAuthenticated(true);
           } catch (e) {
-            // Ignorar erro
+            console.error('[AUTH] ❌ Erro ao criar perfil padrão:', e);
           }
         }
         setLoading(false);
       }
     } catch (error) {
-      console.error('Erro ao carregar perfil:', error);
+      console.error('[AUTH] ❌ Erro geral ao carregar perfil:', error);
+      console.error('[AUTH] Stack:', error.stack);
       setLoading(false);
     }
   };
@@ -127,27 +184,41 @@ export function AuthProvider({ children }) {
   // Usa: POST /api/auth/login (endpoint do backend)
   const login = async (email, password) => {
     try {
+      console.log('[AUTH] 🔐 Iniciando login...');
+      console.log('[AUTH] Email:', email);
+      console.log('[AUTH] URL da API:', api.defaults.baseURL || 'relativa');
+      
       const response = await api.post('/auth/login', {
         email,
         password,
       });
+
+      console.log('[AUTH] ✅ Resposta do login recebida:');
+      console.log('[AUTH] Status:', response.status);
+      console.log('[AUTH] Dados da resposta:', JSON.stringify(response.data, null, 2));
 
       if (response.data.success && response.data.access_token) {
         // Armazenar token e dados do usuário
         const token = response.data.access_token;
         const userData = response.data.user;
 
+        console.log('[AUTH] 📦 Dados do usuário recebidos:', JSON.stringify(userData, null, 2));
+        console.log('[AUTH] Token recebido (primeiros 20 chars):', token.substring(0, 20) + '...');
+
         localStorage.setItem(TOKEN_KEY, token);
         localStorage.setItem(USER_KEY, JSON.stringify(userData));
 
         setUser(userData);
         
+        console.log('[AUTH] 🔄 Carregando perfil após login...');
         // Carregar perfil do backend
         await loadUserProfile();
         
+        console.log('[AUTH] ✅ Login concluído com sucesso');
         toast.success('Login realizado com sucesso!');
         return true;
       } else {
+        console.error('[AUTH] ❌ Resposta inválida do servidor:', response.data);
         toast.error('Erro ao fazer login. Resposta inválida do servidor.');
         return false;
       }
@@ -280,13 +351,28 @@ export function AuthProvider({ children }) {
 
   // Verificar se usuário tem role específica
   const hasRole = (requiredRole) => {
-    if (!profile) return false;
+    console.log('[AUTH] 🔍 Verificando role:', {
+      requiredRole,
+      profileRole: profile?.role,
+      hasProfile: !!profile,
+      profile: profile ? JSON.stringify(profile, null, 2) : 'null'
+    });
+    
+    if (!profile) {
+      console.log('[AUTH] ❌ Sem perfil, retornando false');
+      return false;
+    }
     
     // Administrador tem acesso a tudo
-    if (profile.role === 'administrador') return true;
+    if (profile.role === 'administrador') {
+      console.log('[AUTH] ✅ Usuário é administrador, acesso permitido');
+      return true;
+    }
     
     // Verificar role específica
-    return profile.role === requiredRole;
+    const hasAccess = profile.role === requiredRole;
+    console.log('[AUTH]', hasAccess ? '✅' : '❌', `Acesso ${hasAccess ? 'permitido' : 'negado'} para role:`, requiredRole);
+    return hasAccess;
   };
 
   // Verificar se usuário tem uma das roles
