@@ -22,7 +22,7 @@ VITE_API_URL=http://localhost:3000/api
 
 **Para produção (com backend no Netlify):**
 ```env
-VITE_API_URL=https://crqcommunidationbackend.netlify.app/api
+VITE_API_URL=https://seu-backend.netlify.app/api
 ```
 
 **Nota:** Se não definir `VITE_API_URL`, o frontend usará `/api` como padrão (proxy do Vite em desenvolvimento).

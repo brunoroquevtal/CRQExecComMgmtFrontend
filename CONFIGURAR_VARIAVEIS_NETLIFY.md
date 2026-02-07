@@ -7,7 +7,7 @@ Configure estas variáveis no **Netlify Dashboard** para o build funcionar corre
 ### Variáveis Obrigatórias
 
 1. **`VITE_API_URL`**
-   - **Valor**: `https://crqcommunidationbackend.netlify.app/api`
+   - **Valor**: `https://seu-backend.netlify.app/api` (substitua pelo seu backend real)
    - **Descrição**: URL do backend no Netlify
 
 ### Variáveis Opcionais (para autenticação)
@@ -62,7 +62,7 @@ Após adicionar as variáveis:
 Após configurar, você deve ter:
 
 ```
-VITE_API_URL = https://crqcommunidationbackend.netlify.app/api
+VITE_API_URL = https://seu-backend.netlify.app/api
 VITE_SUPABASE_URL = https://seu-projeto.supabase.co (opcional)
 VITE_SUPABASE_ANON_KEY = sua-chave-anon (opcional)
 ```
