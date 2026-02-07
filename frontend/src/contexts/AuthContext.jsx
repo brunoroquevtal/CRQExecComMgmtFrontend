@@ -99,7 +99,8 @@ export function AuthProvider({ children }) {
               setLoading(false);
               return;
             } else {
-              // Perfil não encontrado no Supabase - criar perfil padrão
+              // Erro ao buscar (tabela não existe, RLS bloqueando, etc.)
+              // Usar perfil padrão baseado nos dados do Supabase Auth
               const defaultProfile = {
                 id: session.user.id,
                 email: session.user.email,
@@ -111,8 +112,11 @@ export function AuthProvider({ children }) {
               setLoading(false);
             }
           } catch (supabaseDirectError) {
-            // Erro ao buscar do Supabase - usar perfil padrão
-            console.warn('Erro ao buscar perfil do Supabase:', supabaseDirectError);
+            // Erro ao buscar do Supabase (500, tabela não existe, etc.) - usar perfil padrão
+            // Não logar erro 500 para não poluir o console
+            if (import.meta.env.DEV && supabaseDirectError.code !== 'PGRST116') {
+              console.info('Tabela user_profiles não disponível. Usando perfil padrão.');
+            }
             const defaultProfile = {
               id: session.user.id,
               email: session.user.email,
@@ -129,13 +133,13 @@ export function AuthProvider({ children }) {
         } else {
           // Outro erro - tentar buscar do Supabase diretamente
           try {
-            const { data: supabaseProfile } = await supabase
+            const { data: supabaseProfile, error: supabaseError } = await supabase
               .from('user_profiles')
               .select('*')
               .eq('id', userId)
               .single();
 
-            if (supabaseProfile) {
+            if (!supabaseError && supabaseProfile) {
               setProfile(supabaseProfile);
               setIsAuthenticated(true);
               setLoading(false);
@@ -143,9 +147,10 @@ export function AuthProvider({ children }) {
               throw new Error('Perfil não encontrado');
             }
           } catch (supabaseError) {
-            // Fallback para perfil padrão
-            if (import.meta.env.DEV) {
-              console.warn('Erro ao carregar perfil. Usando perfil padrão:', profileError.message);
+            // Fallback para perfil padrão (tabela não existe, RLS bloqueando, etc.)
+            // Não logar erros 500 para não poluir o console
+            if (import.meta.env.DEV && supabaseError.code !== 'PGRST116') {
+              console.info('Erro ao carregar perfil do Supabase. Usando perfil padrão.');
             }
             const defaultProfile = {
               id: session.user.id,
