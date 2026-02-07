@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../utils/api';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
@@ -263,8 +263,83 @@ function Dashboard() {
   // Inclui: Em execução no prazo
   const atividadesEmAndamento = getFilteredActivities('em execução no prazo');
 
-  // Componente para renderizar lista de atividades
+  // Componente para renderizar lista de atividades com filtro e ordenação
   const ActivityList = ({ activities, title, icon, borderColor, bgColor }) => {
+    const [searchText, setSearchText] = useState('');
+    const [filterSequencia, setFilterSequencia] = useState('all');
+    const [sortBy, setSortBy] = useState('seq'); // seq, sequencia, inicio, fim, status, atividade
+    const [sortOrder, setSortOrder] = useState('asc'); // asc, desc
+
+    // Filtrar e ordenar atividades
+    const filteredAndSortedActivities = useMemo(() => {
+      let filtered = [...activities];
+
+      // Filtro por texto (busca em atividade, grupo, sequencia)
+      if (searchText.trim()) {
+        const searchLower = searchText.toLowerCase();
+        filtered = filtered.filter(activity => {
+          const atividade = (activity.atividade || '').toLowerCase();
+          const grupo = (activity.grupo || '').toLowerCase();
+          const sequencia = (activity.sequencia || '').toLowerCase();
+          const seq = String(activity.seq || '').toLowerCase();
+          return atividade.includes(searchLower) || 
+                 grupo.includes(searchLower) || 
+                 sequencia.includes(searchLower) ||
+                 seq.includes(searchLower);
+        });
+      }
+
+      // Filtro por sequencia (CRQ)
+      if (filterSequencia !== 'all') {
+        filtered = filtered.filter(activity => activity.sequencia === filterSequencia);
+      }
+
+      // Ordenação
+      filtered.sort((a, b) => {
+        let aValue, bValue;
+
+        switch (sortBy) {
+          case 'seq':
+            aValue = a.seq || 0;
+            bValue = b.seq || 0;
+            break;
+          case 'sequencia':
+            aValue = (a.sequencia || '').toLowerCase();
+            bValue = (b.sequencia || '').toLowerCase();
+            break;
+          case 'inicio':
+            aValue = parseDate(a.inicio)?.getTime() || 0;
+            bValue = parseDate(b.inicio)?.getTime() || 0;
+            break;
+          case 'fim':
+            aValue = parseDate(a.fim)?.getTime() || 0;
+            bValue = parseDate(b.fim)?.getTime() || 0;
+            break;
+          case 'status':
+            aValue = (a.status || '').toLowerCase();
+            bValue = (b.status || '').toLowerCase();
+            break;
+          case 'atividade':
+            aValue = (a.atividade || '').toLowerCase();
+            bValue = (b.atividade || '').toLowerCase();
+            break;
+          default:
+            aValue = a.seq || 0;
+            bValue = b.seq || 0;
+        }
+
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+        } else {
+          if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+          if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+          return 0;
+        }
+      });
+
+      return filtered;
+    }, [activities, searchText, filterSequencia, sortBy, sortOrder]);
+
     if (activities.length === 0) {
       return (
         <div className="bg-white rounded-xl shadow-md p-6">
@@ -283,11 +358,81 @@ function Dashboard() {
         <h3 className={`text-lg font-display font-semibold text-vtal-gray-800 mb-4 flex items-center gap-2 border-b-2 pb-2 ${borderColor}`}>
           <span>{icon}</span>
           <span>{title}</span>
-          <span className="text-sm font-normal text-gray-500">({activities.length})</span>
+          <span className="text-sm font-normal text-gray-500">
+            ({filteredAndSortedActivities.length} de {activities.length})
+          </span>
         </h3>
-        <div className="max-h-96 overflow-y-auto">
-          <div className="space-y-2">
-            {activities.map((activity, index) => {
+
+        {/* Controles de Filtro e Ordenação */}
+        <div className="mb-4 space-y-3">
+          {/* Campo de busca */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="🔍 Buscar por atividade, grupo, CRQ ou seq..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vtal-secondary focus:border-transparent text-sm"
+            />
+            {searchText && (
+              <button
+                onClick={() => setSearchText('')}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* Filtros e Ordenação */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {/* Filtro por CRQ */}
+            <div>
+              <select
+                value={filterSequencia}
+                onChange={(e) => setFilterSequencia(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vtal-secondary focus:border-transparent text-sm"
+              >
+                <option value="all">Todos os CRQs</option>
+                {SEQUENCIAS.map(seq => (
+                  <option key={seq} value={seq}>{SEQUENCIAS_INFO[seq].nome}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Ordenação */}
+            <div className="flex gap-2">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vtal-secondary focus:border-transparent text-sm"
+              >
+                <option value="seq">Seq</option>
+                <option value="sequencia">CRQ</option>
+                <option value="atividade">Atividade</option>
+                <option value="inicio">Início Planejado</option>
+                <option value="fim">Fim Planejado</option>
+                <option value="status">Status</option>
+              </select>
+              <button
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-vtal-secondary focus:border-transparent text-sm"
+                title={sortOrder === 'asc' ? 'Crescente' : 'Decrescente'}
+              >
+                {sortOrder === 'asc' ? '↑' : '↓'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {filteredAndSortedActivities.length === 0 ? (
+          <p className="text-gray-500 text-sm text-center py-4">
+            Nenhuma atividade encontrada com os filtros aplicados
+          </p>
+        ) : (
+          <div className="max-h-96 overflow-y-auto">
+            <div className="space-y-2">
+              {filteredAndSortedActivities.map((activity, index) => {
               const SequenciaIcon = activity.sequencia ? SEQUENCIAS_INFO[activity.sequencia]?.icon : null;
               const sequenciaColor = activity.sequencia ? SEQUENCIAS_INFO[activity.sequencia]?.color : '';
               
