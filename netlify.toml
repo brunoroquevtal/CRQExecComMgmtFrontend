@@ -3,7 +3,7 @@
   # Não atualizar submodules - o backend não é necessário para o build do frontend
   # O backend é um repositório separado e não precisa ser clonado durante o deploy
   # IMPORTANTE: O Netlify tenta clonar submódulos durante o checkout (antes do build)
-  # Configure no painel do Netlify: Site settings > Build & deploy > Environment variables
+  # CONFIGURE NO PAINEL DO NETLIFY: Site settings > Build & deploy > Environment variables
   # Adicione: GIT_SUBMODULE_UPDATE = false
   command = "git config --global submodule.recurse false && git config --global submodule.active false && npm ci && npm run build"
   publish = "dist"
