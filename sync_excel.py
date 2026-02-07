@@ -303,8 +303,12 @@ def make_api_request(method: str, endpoint: str, json_data: Optional[Dict] = Non
     # Adicionar token de autenticação se disponível
     if API_AUTH_TOKEN:
         headers['Authorization'] = f'Bearer {API_AUTH_TOKEN}'
+        # Log apenas na primeira requisição para debug
+        if not hasattr(make_api_request, '_token_logged'):
+            logger.debug(f"[DEBUG] Token de autenticação presente (primeiros 20 caracteres): {API_AUTH_TOKEN[:20]}...")
+            make_api_request._token_logged = True
     else:
-            # Avisar apenas uma vez que o token não está configurado
+        # Avisar apenas uma vez que o token não está configurado
         if not hasattr(make_api_request, '_token_warning_logged'):
             logger.warning("AVISO: API_AUTH_TOKEN não configurado. Requisições podem falhar com erro 401 (não autorizado).")
             logger.warning("Execute o script novamente e informe email e senha para autenticação.")
@@ -312,6 +316,12 @@ def make_api_request(method: str, endpoint: str, json_data: Optional[Dict] = Non
     
     for attempt in range(retry_count + 1):
         try:
+            # Log de debug na primeira tentativa da primeira requisição
+            if attempt == 0 and not hasattr(make_api_request, '_first_request_logged'):
+                logger.debug(f"[DEBUG] Fazendo requisição {method} para: {url}")
+                logger.debug(f"[DEBUG] Headers: {list(headers.keys())}")
+                make_api_request._first_request_logged = True
+            
             if method.upper() == 'GET':
                 response = requests.get(url, headers=headers, timeout=timeout, verify=verify_ssl)
             elif method.upper() == 'POST':
@@ -339,20 +349,29 @@ def make_api_request(method: str, endpoint: str, json_data: Optional[Dict] = Non
                 logger.error(f"Erro SSL em {method} {url}: {e}")
             return None
             
-        except requests.exceptions.Timeout:
-            logger.warning(f"Timeout em {method} {url} (tentativa {attempt + 1}/{retry_count + 1})")
+        except requests.exceptions.Timeout as e:
+            logger.warning(f"Timeout em {method} {url} (tentativa {attempt + 1}/{retry_count + 1}): {e}")
             if attempt < retry_count:
                 time.sleep(2 * (attempt + 1))
                 continue
+            else:
+                logger.error(f"Timeout após {retry_count + 1} tentativas em {method} {url}")
+                logger.error("A API pode estar sobrecarregada ou inacessível.")
+                return None
                 
         except requests.exceptions.ConnectionError as e:
             logger.warning(f"Erro de conexão em {method} {url} (tentativa {attempt + 1}/{retry_count + 1}): {e}")
             if attempt < retry_count:
                 time.sleep(2 * (attempt + 1))
                 continue
+            else:
+                logger.error(f"Erro de conexão após {retry_count + 1} tentativas em {method} {url}")
+                logger.error(f"Verifique se a API está acessível em: {API_BASE_URL}")
+                logger.error("Verifique sua conexão com a internet.")
+                return None
                 
         except requests.exceptions.HTTPError as e:
-            error_text = e.response.text[:500] if e.response else "Sem resposta"
+            error_text = e.response.text[:500] if e.response and e.response.text else "Sem resposta"
             status_code = e.response.status_code if e.response else 'N/A'
             logger.error(f"Erro HTTP {status_code} em {method} {url}: {error_text}")
             
@@ -372,11 +391,24 @@ def make_api_request(method: str, endpoint: str, json_data: Optional[Dict] = Non
             
             return e.response
             
-        except Exception as e:
-            logger.error(f"Erro inesperado em {method} {url} (tentativa {attempt + 1}/{retry_count + 1}): {e}")
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Erro de requisição em {method} {url} (tentativa {attempt + 1}/{retry_count + 1}): {e}")
+            logger.error(f"Tipo de erro: {type(e).__name__}")
             if attempt < retry_count:
                 time.sleep(2 * (attempt + 1))
                 continue
+            else:
+                logger.error(f"Falha após {retry_count + 1} tentativas devido a erro de requisição")
+                return None
+        except Exception as e:
+            logger.error(f"Erro inesperado em {method} {url} (tentativa {attempt + 1}/{retry_count + 1}): {e}")
+            logger.exception("Detalhes completos do erro:")
+            if attempt < retry_count:
+                time.sleep(2 * (attempt + 1))
+                continue
+            else:
+                logger.error(f"Falha após {retry_count + 1} tentativas devido a erro inesperado")
+                return None
     
     logger.error(f"Falha ao completar {method} {url} após {retry_count + 1} tentativas")
     return None
@@ -884,18 +916,39 @@ def create_activity_via_api(activity: Dict, sync_timestamp: Optional[str] = None
         
         response = make_api_request('PUT', '/api/activity', json_data=activity_data, timeout=60)
         
-        if response and response.status_code == 200:
-            result = response.json()
-            if result.get("success"):
-                rollback_info = " (Rollback)" if activity.get('is_rollback') else ""
-                encerramento_info = " [ENCERRAMENTO]" if activity.get('is_encerramento') else ""
-                logger.info(f"[OK] Atividade processada: Seq {activity['seq']}, CRQ {activity['sequencia']}{rollback_info}{encerramento_info}")
-                return True
-            else:
-                logger.warning(f"[ERRO] Falha ao processar: {result.get('message', 'Erro desconhecido')}")
+        if response is None:
+            # Erro de conexão, timeout ou outro erro que não retornou resposta
+            logger.warning(f"[ERRO] Falha ao processar: Não foi possível conectar à API")
+            logger.debug(f"Atividade que falhou: Seq {activity.get('seq')}, CRQ {activity.get('sequencia')}")
+            return False
+        
+        if response.status_code == 200:
+            try:
+                result = response.json()
+                if result.get("success"):
+                    rollback_info = " (Rollback)" if activity.get('is_rollback') else ""
+                    encerramento_info = " [ENCERRAMENTO]" if activity.get('is_encerramento') else ""
+                    logger.info(f"[OK] Atividade processada: Seq {activity['seq']}, CRQ {activity['sequencia']}{rollback_info}{encerramento_info}")
+                    return True
+                else:
+                    logger.warning(f"[ERRO] Falha ao processar: {result.get('message', 'Erro desconhecido')}")
+                    return False
+            except ValueError as json_err:
+                logger.error(f"[ERRO] Resposta não é JSON válido: {json_err}")
+                logger.error(f"Conteúdo da resposta: {response.text[:500] if response.text else 'Sem conteúdo'}")
                 return False
         else:
-            logger.warning(f"[ERRO] Falha ao processar: HTTP {response.status_code if response else 'N/A'}")
+            # Tentar extrair mensagem de erro da resposta
+            error_msg = "Erro desconhecido"
+            try:
+                if response.text:
+                    error_data = response.json()
+                    error_msg = error_data.get('error', error_data.get('message', response.text[:200]))
+            except:
+                if response.text:
+                    error_msg = response.text[:200]
+            
+            logger.warning(f"[ERRO] Falha ao processar: HTTP {response.status_code} - {error_msg}")
             return False
     except Exception as e:
         logger.error(f"[ERRO] Erro ao processar atividade: {e}")

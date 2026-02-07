@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import api from '../utils/api';
-import supabase from '../utils/supabase';
 
 const AuthContext = createContext();
 
@@ -48,6 +47,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   // Carregar perfil do usuário via API do backend
+  // NÃO usa mais consulta direta ao Supabase (user_profiles)
+  // Usa: GET /api/auth/profile (endpoint do backend)
   const loadUserProfile = async () => {
     try {
       const token = localStorage.getItem(TOKEN_KEY);
@@ -56,7 +57,7 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      // Buscar perfil via API do backend
+      // Buscar perfil via API do backend (não mais diretamente do Supabase)
       try {
         const response = await api.get('/auth/profile');
 
@@ -122,6 +123,8 @@ export function AuthProvider({ children }) {
   };
 
   // Login com email e senha via API do backend
+  // NÃO usa mais Supabase diretamente
+  // Usa: POST /api/auth/login (endpoint do backend)
   const login = async (email, password) => {
     try {
       const response = await api.post('/auth/login', {
@@ -182,59 +185,56 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Cadastro de novo usuário
+  // Cadastro de novo usuário via API do backend
+  // NÃO usa mais Supabase diretamente
+  // Usa: POST /api/auth/signup (endpoint do backend)
   const signup = async (email, password, fullName) => {
-    if (!supabase) {
-      toast.error('Autenticação não disponível. Configure o Supabase para criar contas.');
-      return false;
-    }
-
     try {
-      // Validar domínio antes de cadastrar (opcional - se endpoint não existir, continua)
-      try {
-        const validateResponse = await api.post('/auth/signup', { email });
-        if (validateResponse.data && !validateResponse.data.success) {
-          toast.error(validateResponse.data.error || 'Domínio não permitido');
-          return false;
-        }
-      } catch (validationError) {
-        // Se o endpoint não existir (404), continuar sem validação
-        // Isso permite que o cadastro funcione mesmo sem o backend configurado
-        if (validationError.response?.status !== 404) {
-          console.warn('Erro ao validar domínio (continuando sem validação):', validationError.message);
-        }
-        // Continuar com o cadastro mesmo sem validação de domínio
-      }
-
-      // Cadastrar no Supabase Auth
-      const { data, error } = await supabase.auth.signUp({
+      const response = await api.post('/auth/signup', {
         email,
         password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-        },
+        full_name: fullName
       });
 
-      if (error) {
-        toast.error(error.message);
+      if (response.data.success) {
+        toast.success(response.data.message || 'Cadastro realizado! Verifique seu email para confirmar a conta.');
+        return true;
+      } else {
+        toast.error(response.data.error || 'Erro ao fazer cadastro');
         return false;
       }
-
-      if (data.user) {
-        toast.success('Cadastro realizado! Verifique seu email para confirmar a conta.');
-        return true;
-      }
-
-      return false;
     } catch (error) {
       console.error('Erro ao fazer cadastro:', error);
-      // Se for erro do Supabase, já foi tratado acima
-      // Se for outro erro, mostrar mensagem genérica
-      if (!error.message || !error.message.includes('auth')) {
-        toast.error('Erro ao fazer cadastro. Tente novamente.');
+      
+      // Mensagens de erro mais amigáveis
+      let errorMessage = 'Erro ao fazer cadastro. Tente novamente.';
+      
+      if (error.response) {
+        const status = error.response.status;
+        const errorData = error.response.data;
+        
+        if (status === 400 || status === 403) {
+          if (errorData?.error) {
+            if (errorData.error.includes('já está cadastrado') || errorData.error.includes('already registered')) {
+              errorMessage = 'Este email já está cadastrado';
+            } else if (errorData.error.includes('não permitido') || errorData.error.includes('not allowed')) {
+              errorMessage = errorData.error;
+            } else if (errorData.error.includes('Senha') || errorData.error.includes('Password')) {
+              errorMessage = errorData.error;
+            } else {
+              errorMessage = errorData.error;
+            }
+          } else {
+            errorMessage = 'Dados inválidos. Verifique email e senha.';
+          }
+        } else if (status === 503) {
+          errorMessage = 'Serviço de cadastro indisponível. Tente novamente mais tarde.';
+        } else if (errorData?.error) {
+          errorMessage = errorData.error;
+        }
       }
+      
+      toast.error(errorMessage);
       return false;
     }
   };
