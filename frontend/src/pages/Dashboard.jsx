@@ -263,6 +263,39 @@ function Dashboard() {
   // Inclui: Em execução no prazo
   const atividadesEmAndamento = getFilteredActivities('em execução no prazo');
 
+  // Função para obter cor do status baseado nos novos status
+  const getStatusColor = (status) => {
+    if (!status) return 'bg-vtal-gray-100 text-vtal-gray-600';
+    const statusLower = status.toLowerCase();
+    
+    // N/A para milestones
+    if (statusLower === 'n/a') {
+      return 'bg-vtal-gray-100 text-vtal-gray-600';
+    }
+    // Concluído - verde claro
+    else if (statusLower.includes('concluído') || statusLower.includes('concluido')) {
+      return 'bg-green-100 text-green-800';
+    }
+    // Em execução no prazo - azul brilhante
+    else if (statusLower.includes('em execução no prazo') || statusLower.includes('em execucao no prazo')) {
+      return 'bg-blue-600 text-white';
+    }
+    // Em execução fora do prazo - vermelho
+    else if (statusLower.includes('em execução fora do prazo') || statusLower.includes('em execucao fora do prazo')) {
+      return 'bg-red-500 text-white';
+    }
+    // A Iniciar no prazo - azul claro
+    else if (statusLower.includes('a iniciar no prazo')) {
+      return 'bg-blue-100 text-blue-800';
+    }
+    // A Iniciar fora do prazo - laranja
+    else if (statusLower.includes('a iniciar fora do prazo')) {
+      return 'bg-orange-200 text-orange-900';
+    }
+    // Status desconhecido - usar cor padrão
+    return 'bg-vtal-gray-100 text-vtal-gray-600';
+  };
+
   // Componente para renderizar lista de atividades com filtro e ordenação
   const ActivityList = ({ activities, title, icon, borderColor, bgColor }) => {
     const [searchText, setSearchText] = useState('');
@@ -435,6 +468,7 @@ function Dashboard() {
               {filteredAndSortedActivities.map((activity, index) => {
               const SequenciaIcon = activity.sequencia ? SEQUENCIAS_INFO[activity.sequencia]?.icon : null;
               const sequenciaColor = activity.sequencia ? SEQUENCIAS_INFO[activity.sequencia]?.color : '';
+              const statusColor = getStatusColor(activity.status);
               
               return (
                 <div
@@ -493,7 +527,7 @@ function Dashboard() {
                       </div>
                     </div>
                     <div className="flex-shrink-0">
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${bgColor} text-vtal-gray-700`}>
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColor}`}>
                         {activity.status || 'N/A'}
                       </span>
                     </div>
