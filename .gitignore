@@ -48,6 +48,9 @@ data/
 # Environment variables
 .env
 .env.local
+.env.*
+!.env.example
+*.env
 
 # OS
 .DS_Store

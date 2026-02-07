@@ -6,8 +6,6 @@
 [build.environment]
   NODE_VERSION = "18"
   NPM_CONFIG_PRODUCTION = "false"
-  # Desabilitar varredura de secrets (variáveis VITE_* são públicas e esperadas no build)
-  SECRETS_SCAN_ENABLED = "false"
 
 [[redirects]]
   from = "/*"
