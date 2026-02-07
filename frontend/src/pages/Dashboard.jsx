@@ -475,64 +475,64 @@ function Dashboard() {
                     key={`${activity.sequencia}-${activity.seq}-${index}`}
                     className={`p-3 rounded-lg border-l-4 ${bgColor} hover:shadow-md transition-shadow`}
                   >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        {SequenciaIcon && (
-                          <SequenciaIcon className={`w-4 h-4 flex-shrink-0 ${sequenciaColor}`} />
-                        )}
-                        <span className="text-xs font-semibold text-vtal-gray-600 uppercase">
-                          {activity.sequencia || 'N/A'}
-                        </span>
-                        <span className="text-xs text-vtal-gray-500">#{activity.seq || 'N/A'}</span>
-                      </div>
-                      <p className="text-sm font-medium text-vtal-gray-800 truncate">
-                        {activity.atividade || activity.grupo || 'Sem descrição'}
-                      </p>
-                      {activity.grupo && activity.atividade && (
-                        <p className="text-xs text-vtal-gray-500 mt-1 truncate">
-                          {activity.grupo}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          {SequenciaIcon && (
+                            <SequenciaIcon className={`w-4 h-4 flex-shrink-0 ${sequenciaColor}`} />
+                          )}
+                          <span className="text-xs font-semibold text-vtal-gray-600 uppercase">
+                            {activity.sequencia || 'N/A'}
+                          </span>
+                          <span className="text-xs text-vtal-gray-500">#{activity.seq || 'N/A'}</span>
+                        </div>
+                        <p className="text-sm font-medium text-vtal-gray-800 truncate">
+                          {activity.atividade || activity.grupo || 'Sem descrição'}
                         </p>
-                      )}
-                      <div className="flex items-center gap-4 mt-2 text-xs text-vtal-gray-600 flex-wrap">
-                        {activity.inicio && (
-                          <span>Início Planejado: {new Date(activity.inicio).toLocaleString('pt-BR', { 
-                            day: '2-digit', 
-                            month: '2-digit', 
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}</span>
+                        {activity.grupo && activity.atividade && (
+                          <p className="text-xs text-vtal-gray-500 mt-1 truncate">
+                            {activity.grupo}
+                          </p>
                         )}
-                        {activity.fim && (
-                          <span>Fim Planejado: {new Date(activity.fim).toLocaleString('pt-BR', { 
-                            day: '2-digit', 
-                            month: '2-digit', 
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}</span>
-                        )}
-                        {activity.horario_inicio_real && (
-                          <span className="text-green-600 font-semibold">
-                            Início Real: {new Date(activity.horario_inicio_real).toLocaleString('pt-BR', { 
+                        <div className="flex items-center gap-4 mt-2 text-xs text-vtal-gray-600 flex-wrap">
+                          {activity.inicio && (
+                            <span>Início Planejado: {new Date(activity.inicio).toLocaleString('pt-BR', { 
                               day: '2-digit', 
                               month: '2-digit', 
                               year: 'numeric',
                               hour: '2-digit',
                               minute: '2-digit'
-                            })}
-                          </span>
-                        )}
+                            })}</span>
+                          )}
+                          {activity.fim && (
+                            <span>Fim Planejado: {new Date(activity.fim).toLocaleString('pt-BR', { 
+                              day: '2-digit', 
+                              month: '2-digit', 
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}</span>
+                          )}
+                          {activity.horario_inicio_real && (
+                            <span className="text-green-600 font-semibold">
+                              Início Real: {new Date(activity.horario_inicio_real).toLocaleString('pt-BR', { 
+                                day: '2-digit', 
+                                month: '2-digit', 
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColor}`}>
+                          {activity.status || 'N/A'}
+                        </span>
                       </div>
                     </div>
-                    <div className="flex-shrink-0">
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColor}`}>
-                        {activity.status || 'N/A'}
-                      </span>
-                    </div>
                   </div>
-                </div>
                 );
               })}
           </div>
