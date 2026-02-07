@@ -65,6 +65,10 @@ desktop.ini
 
 # Backend (repositório separado)
 backend/
+# Exceção: arquivos de configuração do Netlify no backend
+!backend/netlify.toml
+!backend/netlify/
+!backend/netlify/**
 
 # Node (Frontend)
 node_modules/
