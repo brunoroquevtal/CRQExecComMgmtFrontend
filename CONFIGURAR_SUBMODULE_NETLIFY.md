@@ -1,6 +1,20 @@
 # 🔧 Configurar Submodule Privado no Netlify
 
-O Netlify precisa de permissão para clonar o submodule `backend` que está em um repositório privado.
+**⚠️ ATUALIZAÇÃO**: O submodule `backend` foi removido do repositório do frontend. O backend é um projeto separado e não precisa estar incluído no deploy do frontend. Este documento é mantido apenas para referência histórica.
+
+---
+
+## ❌ Status: Submodule Removido
+
+O submodule `backend` foi removido porque:
+- O backend é um projeto separado com seu próprio repositório
+- O frontend não precisa do código do backend para fazer o build
+- O frontend se comunica com o backend apenas via API (HTTP)
+- Isso evita problemas de autenticação no Netlify
+
+## 📝 Informação Histórica
+
+O Netlify precisaria de permissão para clonar o submodule `backend` que estava em um repositório privado.
 
 ## 📋 Solução: Personal Access Token (PAT)
 
