@@ -132,7 +132,7 @@ function Settings() {
             <li>✅ Edição interativa de dados em tempo real</li>
             <li>✅ Dashboard executivo com gráficos e indicadores</li>
             <li>✅ Geração automática de mensagem consolidada</li>
-            <li>✅ Persistência de dados em banco SQLite</li>
+            <li>✅ Persistência de dados em Supabase (PostgreSQL)</li>
           </ul>
         </div>
       </div>

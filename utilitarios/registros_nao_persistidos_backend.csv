@@ -1,0 +1,68 @@
+﻿linha,seq,sequencia,atividade,grupo,status,inicio,fim,motivo_nao_persistir,is_visible
+14,19,REDE,CRQ SI,N/A,N/A,2026-02-07 19:00:00,2026-02-07 23:00:00,Grupo E Status vazios/N/A (is_visible=0),0
+15,19,REDE,CRQ Openshift,N/A,N/A,2026-02-07 19:00:00,2026-02-07 23:00:00,Grupo E Status vazios/N/A (is_visible=0),0
+16,19,REDE,CRQ NAS,N/A,N/A,2026-02-07 18:50:00,2026-02-07 23:00:00,Grupo E Status vazios/N/A (is_visible=0),0
+48, ROLLBACK,REDE,N/A,N/A,N/A,N/A,N/A,Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+54,N/A,REDE,ATIVIDADE DE ROLLBACK - STOP DA APLICAÇÃO GESTECH,JORNADAFULF_N2,A Iniciar no prazo,2026-02-08 10:30:00,2026-02-08 11:30:00,Seq inválido ou vazio,0
+13,N/A,OPENSHIFT,CRQ NFS,N/A,N/A,2026-02-07 20:30:00,2026-02-08 01:45:00,Seq inválido ou vazio | Grupo E Status vazios/N/A (is_visible=0),0
+14,N/A,OPENSHIFT,VIRADA da REDE,N/A,N/A,2026-02-07 23:00:00,2026-02-08 01:45:00,Seq inválido ou vazio | Grupo E Status vazios/N/A (is_visible=0),0
+24, ROLLBACK,OPENSHIFT,N/A,N/A,N/A,N/A,N/A,Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+12, ROLLBACK,NFS,N/A,N/A,N/A,N/A,N/A,Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+20,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+21,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+22,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+23,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+24,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+25,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+26,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+27,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+28,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+29,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+30,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+31,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+32,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+33,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+34,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+35,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+36,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+37,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+38,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+39,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+40,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+41,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+42,N/A,NFS,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+15,33,SI,VIRADA DA REDE,N/A,N/A,2026-02-07 23:00:00,2026-02-08 01:45:00,Grupo E Status vazios/N/A (is_visible=0),0
+18, ROLLBACK,SI,N/A,N/A,N/A,N/A,N/A,Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+21,N/A,SI,ATIVIDADE DE ROLLBACK - EXECUTAR VIRADA DE PRODUÇÃO PARA SCN,ORACLE_N2,A Iniciar no prazo,2026-02-08 03:45:00,2026-02-08 04:45:00,Seq inválido ou vazio,0
+30,N/A,SI,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+31,N/A,SI,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+32,N/A,SI,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+33,N/A,SI,CARKPW01A,COFRE DE SENHAS - PRD,N/A,N/A,N/A,Seq inválido ou vazio | Sem início ou fim válido,0
+34,N/A,SI,CARKPW02,COFRE DE SENHAS - PRD,N/A,N/A,N/A,Seq inválido ou vazio | Sem início ou fim válido,0
+35,N/A,SI,CARKPW03,COFRE DE SENHAS - PRD,N/A,N/A,N/A,Seq inválido ou vazio | Sem início ou fim válido,0
+36,N/A,SI,CARKPX01,COFRE DE SENHAS - PRD,N/A,N/A,N/A,Seq inválido ou vazio | Sem início ou fim válido,0
+37,N/A,SI,CARKPX02,COFRE DE SENHAS - PRD,N/A,N/A,N/A,Seq inválido ou vazio | Sem início ou fim válido,0
+38,N/A,SI,CARKPX03,COFRE DE SENHAS - PRD,N/A,N/A,N/A,Seq inválido ou vazio | Sem início ou fim válido,0
+39,N/A,SI,CARKPX04A,COFRE DE SENHAS - PRD,N/A,N/A,N/A,Seq inválido ou vazio | Sem início ou fim válido,0
+40,N/A,SI,CARKPX04B,COFRE DE SENHAS - PRD,N/A,N/A,N/A,Seq inválido ou vazio | Sem início ou fim válido,0
+13,19,REDE,CRQ SI,N/A,N/A,2026-01-31 19:00:00,2026-01-31 23:00:00,Grupo E Status vazios/N/A (is_visible=0),0
+14,19,REDE,CRQ Openshift,N/A,N/A,2026-01-31 19:00:00,2026-01-31 23:00:00,Grupo E Status vazios/N/A (is_visible=0),0
+15,19,REDE,CRQ NAS,N/A,N/A,2026-01-31 18:50:00,2026-01-31 23:00:00,Grupo E Status vazios/N/A (is_visible=0),0
+46, ROLLBACK,REDE,N/A,N/A,N/A,N/A,N/A,Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+15,N/A,OPENSHIFT,CRQ NFS,N/A,N/A,2026-01-31 20:30:00,2026-01-31 23:30:00,Seq inválido ou vazio | Grupo E Status vazios/N/A (is_visible=0),0
+16,N/A,OPENSHIFT,VIRADA da REDE,N/A,N/A,2026-01-31 23:00:00,2026-02-01 01:45:00,Seq inválido ou vazio | Grupo E Status vazios/N/A (is_visible=0),0
+23, ROLLBACK,OPENSHIFT,N/A,N/A,N/A,N/A,N/A,Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+11, ROLLBACK,NFS,N/A,N/A,N/A,N/A,N/A,Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+18, ROLLBACK,SI,N/A,N/A,N/A,N/A,N/A,Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+21,N/A,SI,ATIVIDADE DE ROLLBACK - EXECUTAR VIRADA DE PRODUÇÃO PARA SCN,ORACLE_N2,Concluído,2026-02-01 08:30:00,2026-02-01 09:30:00,Seq inválido ou vazio,0
+29,N/A,SI,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+30,N/A,SI,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+31,N/A,SI,N/A,N/A,N/A,N/A,N/A,Seq inválido ou vazio | Atividade vazia | Sem início ou fim válido | Grupo E Status vazios/N/A (is_visible=0),0
+32,N/A,SI,CARKPW01A,COFRE DE SENHAS - PRD,N/A,N/A,N/A,Seq inválido ou vazio | Sem início ou fim válido,0
+33,N/A,SI,CARKPW02,COFRE DE SENHAS - PRD,N/A,N/A,N/A,Seq inválido ou vazio | Sem início ou fim válido,0
+34,N/A,SI,CARKPW03,COFRE DE SENHAS - PRD,N/A,N/A,N/A,Seq inválido ou vazio | Sem início ou fim válido,0
+35,N/A,SI,CARKPX01,COFRE DE SENHAS - PRD,N/A,N/A,N/A,Seq inválido ou vazio | Sem início ou fim válido,0
+36,N/A,SI,CARKPX02,COFRE DE SENHAS - PRD,N/A,N/A,N/A,Seq inválido ou vazio | Sem início ou fim válido,0
+37,N/A,SI,CARKPX03,COFRE DE SENHAS - PRD,N/A,N/A,N/A,Seq inválido ou vazio | Sem início ou fim válido,0
+38,N/A,SI,CARKPX04A,COFRE DE SENHAS - PRD,N/A,N/A,N/A,Seq inválido ou vazio | Sem início ou fim válido,0
+39,N/A,SI,CARKPX04B,COFRE DE SENHAS - PRD,N/A,N/A,N/A,Seq inválido ou vazio | Sem início ou fim válido,0

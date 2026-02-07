@@ -73,8 +73,11 @@ logger = logging.getLogger(__name__)
 # Configurações
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 
-# Obter cliente API
-api_client = get_client(API_BASE_URL)
+# Variável global para token de autenticação
+API_AUTH_TOKEN = None
+
+# Cliente API será inicializado após autenticação
+api_client = None
 
 # Mapeamento de sequências conhecidas
 SEQUENCIAS = {
@@ -629,8 +632,8 @@ def create_activities_bulk_via_api(activities: List[Dict], api_url: str = API_BA
     Returns:
         Dict com resultado da operação
     """
-    # Usar cliente API centralizado
-    client = get_client(api_url)
+    # Usar cliente API centralizado com token de autenticação
+    client = get_client(api_url, auth_token=API_AUTH_TOKEN)
     
     # Preparar dados para envio
     activities_data = []
@@ -697,8 +700,8 @@ def create_activity_via_api(activity: Dict, api_url: str = API_BASE_URL, retry_c
     Returns:
         bool: True se criado/atualizado com sucesso
     """
-    # Usar cliente API centralizado
-    client = get_client(api_url)
+    # Usar cliente API centralizado com token de autenticação
+    client = get_client(api_url, auth_token=API_AUTH_TOKEN)
     
     # Converter para formato de criação (POST)
     create_data = {
@@ -734,6 +737,50 @@ def create_activity_via_api(activity: Dict, api_url: str = API_BASE_URL, retry_c
         return False
 
 
+def authenticate_with_api(api_url: str = API_BASE_URL) -> bool:
+    """
+    Autentica com a API e armazena o token
+    
+    Args:
+        api_url: URL base da API
+        
+    Returns:
+        bool: True se autenticação bem-sucedida
+    """
+    global API_AUTH_TOKEN
+    
+    try:
+        logger.info("Fazendo login na API...")
+        
+        # Solicitar credenciais
+        email = input("Email: ").strip()
+        password = input("Senha: ").strip()
+        
+        if not email or not password:
+            logger.error("Email e senha são obrigatórios")
+            return False
+        
+        # Fazer login
+        client = get_client(api_url)
+        result = client.login(email, password)
+        
+        if result.get('success') and result.get('access_token'):
+            API_AUTH_TOKEN = result['access_token']
+            # Atualizar cliente global com token
+            global api_client
+            api_client = get_client(api_url, auth_token=API_AUTH_TOKEN)
+            logger.info("Login realizado com sucesso!")
+            return True
+        else:
+            error_msg = result.get('message', 'Erro desconhecido')
+            logger.error(f"Falha na autenticação: {error_msg}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Erro ao fazer login: {e}")
+        return False
+
+
 def update_activity_via_api(activity: Dict, api_url: str = API_BASE_URL, retry_count: int = 2, delay: float = 0.5) -> bool:
     """
     Atualiza uma atividade via API com retry e delay
@@ -757,8 +804,8 @@ def update_activity_via_api(activity: Dict, api_url: str = API_BASE_URL, retry_c
             logger.warning(f"Excel_Data_ID nao encontrado para Seq {activity['seq']}, CRQ {activity['sequencia']}. "
                          f"A atividade precisa estar no banco (excel_data) antes de poder ser atualizada.")
     
-    # Usar cliente API centralizado (retry é automático)
-    client = get_client(api_url)
+    # Usar cliente API centralizado com token de autenticação
+    client = get_client(api_url, auth_token=API_AUTH_TOKEN)
     
     # Log do que está sendo enviado (apenas campos principais)
     logger.debug(f"Enviando: Seq {activity['seq']}, CRQ {activity['sequencia']}, "
@@ -873,8 +920,8 @@ def check_api_health(api_url: str = API_BASE_URL) -> bool:
         logger.info("[AVISO] Verificacao de API pulada (SKIP_API_CHECK=true)")
         return True
     
-    # Usar cliente API centralizado
-    client = get_client(api_url)
+    # Usar cliente API centralizado com token de autenticação
+    client = get_client(api_url, auth_token=API_AUTH_TOKEN)
     
     # Tentar verificação rápida
     try:
@@ -953,6 +1000,21 @@ def get_excel_path() -> str:
 
 
 def main():
+    global API_AUTH_TOKEN
+    
+    # Autenticar com a API antes de processar
+    print("\n" + "=" * 60)
+    print("AUTENTICACAO NECESSARIA")
+    print("=" * 60)
+    print("O sincronizador precisa de autenticacao para atualizar atividades.")
+    print("Por favor, informe suas credenciais:\n")
+    
+    if not authenticate_with_api(API_BASE_URL):
+        logger.error("Falha na autenticacao. Encerrando sincronizacao.")
+        print("\n[ERRO] Falha na autenticacao. Verifique email e senha.")
+        sys.exit(1)
+    
+    print("\n[OK] Autenticacao realizada com sucesso!\n")
     """Função principal"""
     global interrupted, processed_count, created_count, updated_count, failed_count
     

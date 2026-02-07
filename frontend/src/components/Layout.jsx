@@ -14,6 +14,7 @@ function Layout() {
     { path: '/planejamento', label: 'Planejamento', icon: '📅' },
     { path: '/comunicacao', label: 'Comunicação', icon: '💬' },
     { path: '/atividades-ocultas', label: 'Atividades Ocultas', icon: '👁️', leaderOnly: true },
+    { path: '/auditoria-atividades', label: 'Auditoria', icon: '🔍', leaderOnly: true },
     { path: '/usuarios', label: 'Usuários', icon: '👥', adminOnly: true },
     { path: '/configuracoes', label: 'Configurações', icon: '⚙️' }
   ].filter(item => {

@@ -1,0 +1,63 @@
+﻿linha,seq,sequencia,atividade,status,motivo_rejeicao
+17,BO,REDE,REALIZAR MIGRAÇÃO DA VLANS PARA O DC ARCOS,A Iniciar no prazo,Seq inválido (valor: BO)
+48, ROLLBACK,REDE,,,Seq inválido (valor:  ROLLBACK)
+54,,REDE,ATIVIDADE DE ROLLBACK - STOP DA APLICAÇÃO GESTECH,A Iniciar no prazo,Seq vazio ou NaN
+13,,OPENSHIFT,CRQ NFS,,Seq vazio ou NaN
+14,,OPENSHIFT,VIRADA da REDE,,Seq vazio ou NaN
+24, ROLLBACK,OPENSHIFT,,,Seq inválido (valor:  ROLLBACK)
+12, ROLLBACK,NFS,,,Seq inválido (valor:  ROLLBACK)
+20,,NFS,,,Seq vazio ou NaN
+21,,NFS,,,Seq vazio ou NaN
+22,,NFS,,,Seq vazio ou NaN
+23,,NFS,,,Seq vazio ou NaN
+24,,NFS,,,Seq vazio ou NaN
+25,,NFS,,,Seq vazio ou NaN
+26,,NFS,,,Seq vazio ou NaN
+27,,NFS,,,Seq vazio ou NaN
+28,,NFS,,,Seq vazio ou NaN
+29,,NFS,,,Seq vazio ou NaN
+30,,NFS,,,Seq vazio ou NaN
+31,,NFS,,,Seq vazio ou NaN
+32,,NFS,,,Seq vazio ou NaN
+33,,NFS,,,Seq vazio ou NaN
+34,,NFS,,,Seq vazio ou NaN
+35,,NFS,,,Seq vazio ou NaN
+36,,NFS,,,Seq vazio ou NaN
+37,,NFS,,,Seq vazio ou NaN
+38,,NFS,,,Seq vazio ou NaN
+39,,NFS,,,Seq vazio ou NaN
+40,,NFS,,,Seq vazio ou NaN
+41,,NFS,,,Seq vazio ou NaN
+42,,NFS,,,Seq vazio ou NaN
+18, ROLLBACK,SI,,,Seq inválido (valor:  ROLLBACK)
+21,,SI,ATIVIDADE DE ROLLBACK - EXECUTAR VIRADA DE PRODUÇÃO PARA SCN,A Iniciar no prazo,Seq vazio ou NaN
+30,,SI,,,Seq vazio ou NaN
+31,,SI,,,Seq vazio ou NaN
+32,,SI,,,Seq vazio ou NaN
+33,,SI,CARKPW01A,,Seq vazio ou NaN
+34,,SI,CARKPW02,,Seq vazio ou NaN
+35,,SI,CARKPW03,,Seq vazio ou NaN
+36,,SI,CARKPX01,,Seq vazio ou NaN
+37,,SI,CARKPX02,,Seq vazio ou NaN
+38,,SI,CARKPX03,,Seq vazio ou NaN
+39,,SI,CARKPX04A,,Seq vazio ou NaN
+40,,SI,CARKPX04B,,Seq vazio ou NaN
+16,bo,REDE,REALIZAR MIGRAÇÃO DA VLANS PARA O DC ARCOS,Não executada - Rollback,Seq inválido (valor: bo)
+46, ROLLBACK,REDE,,,Seq inválido (valor:  ROLLBACK)
+15,,OPENSHIFT,CRQ NFS,,Seq vazio ou NaN
+16,,OPENSHIFT,VIRADA da REDE,,Seq vazio ou NaN
+23, ROLLBACK,OPENSHIFT,,,Seq inválido (valor:  ROLLBACK)
+11, ROLLBACK,NFS,,,Seq inválido (valor:  ROLLBACK)
+18, ROLLBACK,SI,,,Seq inválido (valor:  ROLLBACK)
+21,,SI,ATIVIDADE DE ROLLBACK - EXECUTAR VIRADA DE PRODUÇÃO PARA SCN,Concluído,Seq vazio ou NaN
+29,,SI,,,Seq vazio ou NaN
+30,,SI,,,Seq vazio ou NaN
+31,,SI,,,Seq vazio ou NaN
+32,,SI,CARKPW01A,,Seq vazio ou NaN
+33,,SI,CARKPW02,,Seq vazio ou NaN
+34,,SI,CARKPW03,,Seq vazio ou NaN
+35,,SI,CARKPX01,,Seq vazio ou NaN
+36,,SI,CARKPX02,,Seq vazio ou NaN
+37,,SI,CARKPX03,,Seq vazio ou NaN
+38,,SI,CARKPX04A,,Seq vazio ou NaN
+39,,SI,CARKPX04B,,Seq vazio ou NaN
