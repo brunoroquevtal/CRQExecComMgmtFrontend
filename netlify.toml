@@ -4,8 +4,11 @@
   publish = "dist"
 
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "20"
   NPM_CONFIG_PRODUCTION = "false"
+  # Configurar secrets scanning para ignorar variáveis VITE_* (são públicas e esperadas no build)
+  # Essas variáveis são substituídas pelo Vite no build e aparecem no código JavaScript gerado
+  SECRETS_SCAN_OMIT_KEYS = "VITE_API_URL,VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY,API_BASE_URL"
 
 [[redirects]]
   from = "/*"
