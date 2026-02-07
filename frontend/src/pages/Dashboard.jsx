@@ -466,15 +466,15 @@ function Dashboard() {
           <div className="max-h-96 overflow-y-auto">
             <div className="space-y-2">
               {filteredAndSortedActivities.map((activity, index) => {
-              const SequenciaIcon = activity.sequencia ? SEQUENCIAS_INFO[activity.sequencia]?.icon : null;
-              const sequenciaColor = activity.sequencia ? SEQUENCIAS_INFO[activity.sequencia]?.color : '';
-              const statusColor = getStatusColor(activity.status);
-              
-              return (
-                <div
-                  key={`${activity.sequencia}-${activity.seq}-${index}`}
-                  className={`p-3 rounded-lg border-l-4 ${bgColor} hover:shadow-md transition-shadow`}
-                >
+                const SequenciaIcon = activity.sequencia ? SEQUENCIAS_INFO[activity.sequencia]?.icon : null;
+                const sequenciaColor = activity.sequencia ? SEQUENCIAS_INFO[activity.sequencia]?.color : '';
+                const statusColor = getStatusColor(activity.status);
+                
+                return (
+                  <div
+                    key={`${activity.sequencia}-${activity.seq}-${index}`}
+                    className={`p-3 rounded-lg border-l-4 ${bgColor} hover:shadow-md transition-shadow`}
+                  >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
@@ -533,8 +533,8 @@ function Dashboard() {
                     </div>
                   </div>
                 </div>
-              );
-            })}
+                );
+              })}
           </div>
         </div>
       </div>
