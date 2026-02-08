@@ -37,6 +37,25 @@ const SEQUENCIAS_INFO = {
   SI: { nome: 'SI', icon: SIIcon, color: 'text-yellow-600' }
 };
 
+// Função para parsear data (função pura, pode ser usada fora do componente)
+const parseDate = (dateValue) => {
+  if (!dateValue) return null;
+  if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
+    return dateValue;
+  }
+  if (typeof dateValue === 'string') {
+    try {
+      const date = new Date(dateValue);
+      if (!isNaN(date.getTime())) {
+        return date;
+      }
+    } catch (e) {
+      return null;
+    }
+  }
+  return null;
+};
+
 function Dashboard() {
   const [statistics, setStatistics] = useState(null);
   const [activities, setActivities] = useState([]);
@@ -79,8 +98,6 @@ function Dashboard() {
       setLoading(false);
     }
   };
-
-  // parseDate agora está definido fora do componente
 
   // Filtrar atividades por status e CRQ
   const getFilteredActivities = useCallback((statusFilter) => {
