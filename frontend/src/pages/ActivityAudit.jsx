@@ -37,7 +37,7 @@ function ActivityAudit() {
         params.append('seq', filters.seq);
       }
 
-      const response = await api.get(`/api/activity-audit?${params.toString()}`);
+      const response = await api.get(`/activity-audit?${params.toString()}`);
       setRecords(response.data.records || []);
     } catch (error) {
       console.error('Erro ao carregar registros de auditoria:', error);
@@ -78,7 +78,7 @@ function ActivityAudit() {
 
     setMigrating(true);
     try {
-      const response = await api.post('/api/activity-audit/migrate', {
+      const response = await api.post('/activity-audit/migrate', {
         audit_ids: Array.from(selectedIds)
       });
 
