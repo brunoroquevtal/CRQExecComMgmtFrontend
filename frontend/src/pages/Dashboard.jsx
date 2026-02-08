@@ -579,6 +579,14 @@ function Dashboard() {
     a_iniciar_fora_prazo: 0
   };
 
+  // Calcular total baseado nas atividades filtradas por rollback
+  const atividadesFiltradasPorRollback = useMemo(() => {
+    return filterByRollback(activities.filter(a => !a.is_milestone));
+  }, [activities, filterByRollback]);
+
+  // Atualizar o total com base nas atividades filtradas
+  const totalFiltrado = atividadesFiltradasPorRollback.length;
+
   // Dados para gráfico de pizza (status)
   const statusData = [
     { name: 'Concluídas', value: geralSafe.concluidas || 0, color: '#28a745' },
@@ -693,7 +701,7 @@ function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-vtal-gray-600 text-xs font-medium">Total</p>
-              <p className="text-2xl font-display font-bold text-vtal-gray-800 mt-1">{geralSafe.total || 0}</p>
+              <p className="text-2xl font-display font-bold text-vtal-gray-800 mt-1">{totalFiltrado}</p>
             </div>
             <div className="text-2xl">📋</div>
           </div>
