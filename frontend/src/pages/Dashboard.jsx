@@ -63,6 +63,25 @@ function Dashboard() {
   const [activeTab, setActiveTab] = useState('all');
   const [rollbackFilter, setRollbackFilter] = useState('all'); // 'all', 'principal', 'rollback'
 
+  // Função parseDate dentro do componente para garantir acesso
+  const parseDateLocal = useCallback((dateValue) => {
+    if (!dateValue) return null;
+    if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
+      return dateValue;
+    }
+    if (typeof dateValue === 'string') {
+      try {
+        const date = new Date(dateValue);
+        if (!isNaN(date.getTime())) {
+          return date;
+        }
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  }, []);
+
   useEffect(() => {
     loadData();
   }, [rollbackFilter]);
@@ -167,7 +186,7 @@ function Dashboard() {
                                 statusLower.trim() === 'concluida';
     
     // 2. Verificar se tem horário de fim real (indica que foi concluída)
-    const horarioFimReal = parseDate(activity.horario_fim_real);
+    const horarioFimReal = parseDateLocal(activity.horario_fim_real);
     const isConcluidoByHorario = !!horarioFimReal;
     
     // 3. Verificar se o status calculado seria "Concluído" (fallback)
@@ -205,10 +224,10 @@ function Dashboard() {
     }
     
     // 3. Ainda não iniciadas (horário atual > início planejado)
-    const inicioPlanejado = parseDate(activity.inicio);
+    const inicioPlanejado = parseDateLocal(activity.inicio);
     if (inicioPlanejado && now > inicioPlanejado) {
       // Verificar se não tem horário de início real (não foi iniciada)
-      const horarioInicioReal = parseDate(activity.horario_inicio_real);
+      const horarioInicioReal = parseDateLocal(activity.horario_inicio_real);
       if (!horarioInicioReal) {
         // Não foi iniciada e já passou do horário planejado
         return true;
@@ -216,7 +235,7 @@ function Dashboard() {
     }
     
     return false;
-  }), [activities, activeTab]);
+  }), [activities, activeTab, parseDateLocal]);
   
   // Função para filtrar atividades por rollback
   const filterByRollback = useCallback((activityList) => {
