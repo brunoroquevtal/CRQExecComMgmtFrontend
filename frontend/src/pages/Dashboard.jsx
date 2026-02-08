@@ -38,302 +38,302 @@ const SEQUENCIAS_INFO = {
 };
 
 // Função para parsear data (função pura, pode ser usada fora do componente)
-const parseDate = (dateValue) => {
-  if (!dateValue) return null;
-  if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
-    return dateValue;
-  }
-  if (typeof dateValue === 'string') {
-    try {
-      const date = new Date(dateValue);
-      if (!isNaN(date.getTime())) {
-        return date;
-      }
-    } catch (e) {
-      return null;
+  const parseDate = (dateValue) => {
+    if (!dateValue) return null;
+    if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
+      return dateValue;
     }
-  }
-  return null;
-};
+    if (typeof dateValue === 'string') {
+      try {
+        const date = new Date(dateValue);
+        if (!isNaN(date.getTime())) {
+          return date;
+        }
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  };
 
-// Função para obter cor do status baseado nos novos status
-const getStatusColor = (status) => {
-  if (!status) return 'bg-vtal-gray-100 text-vtal-gray-600';
-  const statusLower = status.toLowerCase();
-  
-  // N/A para milestones
-  if (statusLower === 'n/a') {
+  // Função para obter cor do status baseado nos novos status
+  const getStatusColor = (status) => {
+    if (!status) return 'bg-vtal-gray-100 text-vtal-gray-600';
+    const statusLower = status.toLowerCase();
+    
+    // N/A para milestones
+    if (statusLower === 'n/a') {
+      return 'bg-vtal-gray-100 text-vtal-gray-600';
+    }
+    // Concluído - verde claro
+    else if (statusLower.includes('concluído') || statusLower.includes('concluido')) {
+      return 'bg-green-100 text-green-800';
+    }
+    // Em execução no prazo - azul brilhante
+    else if (statusLower.includes('em execução no prazo') || statusLower.includes('em execucao no prazo')) {
+      return 'bg-blue-600 text-white';
+    }
+    // Em execução fora do prazo - vermelho
+    else if (statusLower.includes('em execução fora do prazo') || statusLower.includes('em execucao fora do prazo')) {
+      return 'bg-red-500 text-white';
+    }
+    // A Iniciar no prazo - azul claro
+    else if (statusLower.includes('a iniciar no prazo')) {
+      return 'bg-blue-100 text-blue-800';
+    }
+    // A Iniciar fora do prazo - laranja
+    else if (statusLower.includes('a iniciar fora do prazo')) {
+      return 'bg-orange-200 text-orange-900';
+    }
+    // Status desconhecido - usar cor padrão
     return 'bg-vtal-gray-100 text-vtal-gray-600';
-  }
-  // Concluído - verde claro
-  else if (statusLower.includes('concluído') || statusLower.includes('concluido')) {
-    return 'bg-green-100 text-green-800';
-  }
-  // Em execução no prazo - azul brilhante
-  else if (statusLower.includes('em execução no prazo') || statusLower.includes('em execucao no prazo')) {
-    return 'bg-blue-600 text-white';
-  }
-  // Em execução fora do prazo - vermelho
-  else if (statusLower.includes('em execução fora do prazo') || statusLower.includes('em execucao fora do prazo')) {
-    return 'bg-red-500 text-white';
-  }
-  // A Iniciar no prazo - azul claro
-  else if (statusLower.includes('a iniciar no prazo')) {
-    return 'bg-blue-100 text-blue-800';
-  }
-  // A Iniciar fora do prazo - laranja
-  else if (statusLower.includes('a iniciar fora do prazo')) {
-    return 'bg-orange-200 text-orange-900';
-  }
-  // Status desconhecido - usar cor padrão
-  return 'bg-vtal-gray-100 text-vtal-gray-600';
-};
+  };
 
-// Componente para renderizar lista de atividades com filtro e ordenação
-const ActivityList = ({ activities, title, icon, borderColor, bgColor }) => {
-  const [searchText, setSearchText] = useState('');
-  const [filterSequencia, setFilterSequencia] = useState('all');
-  const [sortBy, setSortBy] = useState('seq'); // seq, sequencia, inicio, fim, status, atividade
-  const [sortOrder, setSortOrder] = useState('asc'); // asc, desc
+  // Componente para renderizar lista de atividades com filtro e ordenação
+  const ActivityList = ({ activities, title, icon, borderColor, bgColor }) => {
+    const [searchText, setSearchText] = useState('');
+    const [filterSequencia, setFilterSequencia] = useState('all');
+    const [sortBy, setSortBy] = useState('seq'); // seq, sequencia, inicio, fim, status, atividade
+    const [sortOrder, setSortOrder] = useState('asc'); // asc, desc
 
-  // Filtrar e ordenar atividades
-  const filteredAndSortedActivities = useMemo(() => {
-    let filtered = [...activities];
+    // Filtrar e ordenar atividades
+    const filteredAndSortedActivities = useMemo(() => {
+      let filtered = [...activities];
 
-    // Filtro por texto (busca em atividade, grupo, sequencia)
-    if (searchText.trim()) {
-      const searchLower = searchText.toLowerCase();
-      filtered = filtered.filter(activity => {
-        const atividade = (activity.atividade || '').toLowerCase();
-        const grupo = (activity.grupo || '').toLowerCase();
-        const sequencia = (activity.sequencia || '').toLowerCase();
-        const seq = String(activity.seq || '').toLowerCase();
-        return atividade.includes(searchLower) || 
-               grupo.includes(searchLower) || 
-               sequencia.includes(searchLower) ||
-               seq.includes(searchLower);
+      // Filtro por texto (busca em atividade, grupo, sequencia)
+      if (searchText.trim()) {
+        const searchLower = searchText.toLowerCase();
+        filtered = filtered.filter(activity => {
+          const atividade = (activity.atividade || '').toLowerCase();
+          const grupo = (activity.grupo || '').toLowerCase();
+          const sequencia = (activity.sequencia || '').toLowerCase();
+          const seq = String(activity.seq || '').toLowerCase();
+          return atividade.includes(searchLower) || 
+                 grupo.includes(searchLower) || 
+                 sequencia.includes(searchLower) ||
+                 seq.includes(searchLower);
+        });
+      }
+
+      // Filtro por sequencia (CRQ)
+      if (filterSequencia !== 'all') {
+        filtered = filtered.filter(activity => activity.sequencia === filterSequencia);
+      }
+
+      // Ordenação
+      filtered.sort((a, b) => {
+        let aValue, bValue;
+
+        switch (sortBy) {
+          case 'seq':
+            aValue = a.seq || 0;
+            bValue = b.seq || 0;
+            break;
+          case 'sequencia':
+            aValue = (a.sequencia || '').toLowerCase();
+            bValue = (b.sequencia || '').toLowerCase();
+            break;
+          case 'inicio':
+            aValue = parseDate(a.inicio)?.getTime() || 0;
+            bValue = parseDate(b.inicio)?.getTime() || 0;
+            break;
+          case 'fim':
+            aValue = parseDate(a.fim)?.getTime() || 0;
+            bValue = parseDate(b.fim)?.getTime() || 0;
+            break;
+          case 'status':
+            aValue = (a.status || '').toLowerCase();
+            bValue = (b.status || '').toLowerCase();
+            break;
+          case 'atividade':
+            aValue = (a.atividade || '').toLowerCase();
+            bValue = (b.atividade || '').toLowerCase();
+            break;
+          default:
+            aValue = a.seq || 0;
+            bValue = b.seq || 0;
+        }
+
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+        } else {
+          if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+          if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+          return 0;
+        }
       });
+
+      return filtered;
+    }, [activities, searchText, filterSequencia, sortBy, sortOrder]);
+
+    if (activities.length === 0) {
+      return (
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <h3 className={`text-lg font-display font-semibold text-vtal-gray-800 mb-4 flex items-center gap-2 ${borderColor}`}>
+            <span>{icon}</span>
+            <span>{title}</span>
+            <span className="text-sm font-normal text-gray-500">({activities.length})</span>
+          </h3>
+          <p className="text-gray-500 text-sm">Nenhuma atividade encontrada</p>
+        </div>
+      );
     }
 
-    // Filtro por sequencia (CRQ)
-    if (filterSequencia !== 'all') {
-      filtered = filtered.filter(activity => activity.sequencia === filterSequencia);
-    }
-
-    // Ordenação
-    filtered.sort((a, b) => {
-      let aValue, bValue;
-
-      switch (sortBy) {
-        case 'seq':
-          aValue = a.seq || 0;
-          bValue = b.seq || 0;
-          break;
-        case 'sequencia':
-          aValue = (a.sequencia || '').toLowerCase();
-          bValue = (b.sequencia || '').toLowerCase();
-          break;
-        case 'inicio':
-          aValue = parseDate(a.inicio)?.getTime() || 0;
-          bValue = parseDate(b.inicio)?.getTime() || 0;
-          break;
-        case 'fim':
-          aValue = parseDate(a.fim)?.getTime() || 0;
-          bValue = parseDate(b.fim)?.getTime() || 0;
-          break;
-        case 'status':
-          aValue = (a.status || '').toLowerCase();
-          bValue = (b.status || '').toLowerCase();
-          break;
-        case 'atividade':
-          aValue = (a.atividade || '').toLowerCase();
-          bValue = (b.atividade || '').toLowerCase();
-          break;
-        default:
-          aValue = a.seq || 0;
-          bValue = b.seq || 0;
-      }
-
-      if (typeof aValue === 'number' && typeof bValue === 'number') {
-        return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
-      } else {
-        if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
-        return 0;
-      }
-    });
-
-    return filtered;
-  }, [activities, searchText, filterSequencia, sortBy, sortOrder]);
-
-  if (activities.length === 0) {
     return (
       <div className="bg-white rounded-xl shadow-md p-6">
-        <h3 className={`text-lg font-display font-semibold text-vtal-gray-800 mb-4 flex items-center gap-2 ${borderColor}`}>
+        <h3 className={`text-lg font-display font-semibold text-vtal-gray-800 mb-4 flex items-center gap-2 border-b-2 pb-2 ${borderColor}`}>
           <span>{icon}</span>
           <span>{title}</span>
-          <span className="text-sm font-normal text-gray-500">({activities.length})</span>
+          <span className="text-sm font-normal text-gray-500">
+            ({filteredAndSortedActivities.length} de {activities.length})
+          </span>
         </h3>
-        <p className="text-gray-500 text-sm">Nenhuma atividade encontrada</p>
-      </div>
-    );
-  }
 
-  return (
-    <div className="bg-white rounded-xl shadow-md p-6">
-      <h3 className={`text-lg font-display font-semibold text-vtal-gray-800 mb-4 flex items-center gap-2 border-b-2 pb-2 ${borderColor}`}>
-        <span>{icon}</span>
-        <span>{title}</span>
-        <span className="text-sm font-normal text-gray-500">
-          ({filteredAndSortedActivities.length} de {activities.length})
-        </span>
-      </h3>
-
-      {/* Controles de Filtro e Ordenação */}
-      <div className="mb-4 space-y-3">
-        {/* Campo de busca */}
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="🔍 Buscar por atividade, grupo, CRQ ou seq..."
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vtal-secondary focus:border-transparent text-sm"
-          />
-          {searchText && (
-            <button
-              onClick={() => setSearchText('')}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-
-        {/* Filtros e Ordenação */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {/* Filtro por CRQ */}
-          <div>
-            <select
-              value={filterSequencia}
-              onChange={(e) => setFilterSequencia(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vtal-secondary focus:border-transparent text-sm"
-            >
-              <option value="all">Todos os CRQs</option>
-              {SEQUENCIAS.map(seq => (
-                <option key={seq} value={seq}>{SEQUENCIAS_INFO[seq].nome}</option>
-              ))}
-            </select>
+        {/* Controles de Filtro e Ordenação */}
+        <div className="mb-4 space-y-3">
+          {/* Campo de busca */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="🔍 Buscar por atividade, grupo, CRQ ou seq..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vtal-secondary focus:border-transparent text-sm"
+            />
+            {searchText && (
+              <button
+                onClick={() => setSearchText('')}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            )}
           </div>
 
-          {/* Ordenação */}
-          <div className="flex gap-2">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vtal-secondary focus:border-transparent text-sm"
-            >
-              <option value="seq">Seq</option>
-              <option value="sequencia">CRQ</option>
-              <option value="atividade">Atividade</option>
-              <option value="inicio">Início Planejado</option>
-              <option value="fim">Fim Planejado</option>
-              <option value="status">Status</option>
-            </select>
-            <button
-              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-vtal-secondary focus:border-transparent text-sm"
-              title={sortOrder === 'asc' ? 'Crescente' : 'Decrescente'}
-            >
-              {sortOrder === 'asc' ? '↑' : '↓'}
-            </button>
+          {/* Filtros e Ordenação */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {/* Filtro por CRQ */}
+            <div>
+              <select
+                value={filterSequencia}
+                onChange={(e) => setFilterSequencia(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vtal-secondary focus:border-transparent text-sm"
+              >
+                <option value="all">Todos os CRQs</option>
+                {SEQUENCIAS.map(seq => (
+                  <option key={seq} value={seq}>{SEQUENCIAS_INFO[seq].nome}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Ordenação */}
+            <div className="flex gap-2">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vtal-secondary focus:border-transparent text-sm"
+              >
+                <option value="seq">Seq</option>
+                <option value="sequencia">CRQ</option>
+                <option value="atividade">Atividade</option>
+                <option value="inicio">Início Planejado</option>
+                <option value="fim">Fim Planejado</option>
+                <option value="status">Status</option>
+              </select>
+              <button
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-vtal-secondary focus:border-transparent text-sm"
+                title={sortOrder === 'asc' ? 'Crescente' : 'Decrescente'}
+              >
+                {sortOrder === 'asc' ? '↑' : '↓'}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {filteredAndSortedActivities.length === 0 ? (
-        <p className="text-gray-500 text-sm text-center py-4">
-          Nenhuma atividade encontrada com os filtros aplicados
-        </p>
-      ) : (
-        <div className="max-h-96 overflow-y-auto">
-          <div className="space-y-2">
-            {filteredAndSortedActivities.map((activity, index) => {
-              const SequenciaIcon = activity.sequencia ? SEQUENCIAS_INFO[activity.sequencia]?.icon : null;
-              const sequenciaColor = activity.sequencia ? SEQUENCIAS_INFO[activity.sequencia]?.color : '';
-              const statusColor = getStatusColor(activity.status);
-              
-              return (
-                <div
-                  key={`${activity.sequencia}-${activity.seq}-${index}`}
-                  className={`p-3 rounded-lg border-l-4 ${bgColor} hover:shadow-md transition-shadow`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        {SequenciaIcon && (
-                          <SequenciaIcon className={`w-4 h-4 flex-shrink-0 ${sequenciaColor}`} />
-                        )}
-                        <span className="text-xs font-semibold text-vtal-gray-600 uppercase">
-                          {activity.sequencia || 'N/A'}
-                        </span>
-                        <span className="text-xs text-vtal-gray-500">#{activity.seq || 'N/A'}</span>
-                      </div>
-                      <p className="text-sm font-medium text-vtal-gray-800 truncate">
-                        {activity.atividade || activity.grupo || 'Sem descrição'}
-                      </p>
-                      {activity.grupo && activity.atividade && (
-                        <p className="text-xs text-vtal-gray-500 mt-1 truncate">
-                          {activity.grupo}
+        {filteredAndSortedActivities.length === 0 ? (
+          <p className="text-gray-500 text-sm text-center py-4">
+            Nenhuma atividade encontrada com os filtros aplicados
+          </p>
+        ) : (
+          <div className="max-h-96 overflow-y-auto">
+            <div className="space-y-2">
+              {filteredAndSortedActivities.map((activity, index) => {
+                const SequenciaIcon = activity.sequencia ? SEQUENCIAS_INFO[activity.sequencia]?.icon : null;
+                const sequenciaColor = activity.sequencia ? SEQUENCIAS_INFO[activity.sequencia]?.color : '';
+                const statusColor = getStatusColor(activity.status);
+                
+                return (
+                  <div
+                    key={`${activity.sequencia}-${activity.seq}-${index}`}
+                    className={`p-3 rounded-lg border-l-4 ${bgColor} hover:shadow-md transition-shadow`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          {SequenciaIcon && (
+                            <SequenciaIcon className={`w-4 h-4 flex-shrink-0 ${sequenciaColor}`} />
+                          )}
+                          <span className="text-xs font-semibold text-vtal-gray-600 uppercase">
+                            {activity.sequencia || 'N/A'}
+                          </span>
+                          <span className="text-xs text-vtal-gray-500">#{activity.seq || 'N/A'}</span>
+                        </div>
+                        <p className="text-sm font-medium text-vtal-gray-800 truncate">
+                          {activity.atividade || activity.grupo || 'Sem descrição'}
                         </p>
-                      )}
-                      <div className="flex items-center gap-4 mt-2 text-xs text-vtal-gray-600 flex-wrap">
-                        {activity.inicio && (
-                          <span>Início Planejado: {new Date(activity.inicio).toLocaleString('pt-BR', { 
-                            day: '2-digit', 
-                            month: '2-digit', 
-                            year: 'numeric',
-                            hour: '2-digit', 
-                            minute: '2-digit'
-                          })}</span>
+                        {activity.grupo && activity.atividade && (
+                          <p className="text-xs text-vtal-gray-500 mt-1 truncate">
+                            {activity.grupo}
+                          </p>
                         )}
-                        {activity.fim && (
-                          <span>Fim Planejado: {new Date(activity.fim).toLocaleString('pt-BR', { 
-                            day: '2-digit', 
-                            month: '2-digit', 
-                            year: 'numeric',
-                            hour: '2-digit', 
-                            minute: '2-digit'
-                          })}</span>
-                        )}
-                        {activity.horario_inicio_real && (
-                          <span className="text-green-600 font-semibold">
-                            Início Real: {new Date(activity.horario_inicio_real).toLocaleString('pt-BR', { 
+                        <div className="flex items-center gap-4 mt-2 text-xs text-vtal-gray-600 flex-wrap">
+                          {activity.inicio && (
+                            <span>Início Planejado: {new Date(activity.inicio).toLocaleString('pt-BR', { 
                               day: '2-digit', 
                               month: '2-digit', 
                               year: 'numeric',
-                              hour: '2-digit', 
+                              hour: '2-digit',
                               minute: '2-digit'
-                            })}
-                          </span>
-                        )}
+                            })}</span>
+                          )}
+                          {activity.fim && (
+                            <span>Fim Planejado: {new Date(activity.fim).toLocaleString('pt-BR', { 
+                              day: '2-digit', 
+                              month: '2-digit', 
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}</span>
+                          )}
+                          {activity.horario_inicio_real && (
+                            <span className="text-green-600 font-semibold">
+                              Início Real: {new Date(activity.horario_inicio_real).toLocaleString('pt-BR', { 
+                                day: '2-digit', 
+                                month: '2-digit', 
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColor}`}>
+                          {activity.status || 'N/A'}
+                        </span>
                       </div>
                     </div>
-                    <div className="flex-shrink-0">
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColor}`}>
-                        {activity.status || 'N/A'}
-                      </span>
-                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
-};
+        )}
+      </div>
+    );
+  };
 
 function Dashboard() {
   const [statistics, setStatistics] = useState(null);
@@ -618,8 +618,17 @@ function Dashboard() {
     return filterByRollback(activities.filter(a => !a.is_milestone));
   }, [activities, filterByRollback]);
 
-  // Atualizar o total com base nas atividades filtradas
-  const totalFiltrado = atividadesFiltradasPorRollback.length;
+  // IMPORTANTE: Quando o filtro for "all" (total), mostrar TODAS as atividades com is_visible = 1
+  // Quando for "principal" ou "rollback", aplicar o filtro de rollback
+  const totalFiltrado = useMemo(() => {
+    if (rollbackFilter === 'all') {
+      // Mostrar todas as atividades (excluindo milestones e já filtradas por is_visible = 1 pelo backend)
+      return activities.filter(a => !a.is_milestone).length;
+    } else {
+      // Aplicar filtro de rollback
+      return atividadesFiltradasPorRollback.length;
+    }
+  }, [rollbackFilter, activities, atividadesFiltradasPorRollback]);
 
   // Dados para gráfico de pizza (status)
   const statusData = [
@@ -683,13 +692,13 @@ function Dashboard() {
             <option value="principal">✅ Principais</option>
             <option value="rollback">🔄 Rollback</option>
           </select>
-          <button
-            onClick={loadData}
-            className="bg-vtal-secondary hover:bg-vtal-primary text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 font-medium text-sm md:text-base"
-          >
-            <span>🔄</span>
-            <span>Atualizar</span>
-          </button>
+        <button
+          onClick={loadData}
+          className="bg-vtal-secondary hover:bg-vtal-primary text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 font-medium text-sm md:text-base"
+        >
+          <span>🔄</span>
+          <span>Atualizar</span>
+        </button>
         </div>
       </div>
 
