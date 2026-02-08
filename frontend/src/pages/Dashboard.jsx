@@ -528,6 +528,39 @@ function Dashboard() {
     return activityList;
   }, [rollbackFilter]);
   
+  // Filtrar atividades concluídas
+  const atividadesConcluidas = useMemo(() => {
+    return activities.filter(activity => {
+      // Excluir milestones
+      if (activity.is_milestone) return false;
+      
+      // Filtrar por CRQ se uma aba específica estiver selecionada
+      if (activeTab !== 'all' && activity.sequencia !== activeTab) {
+        return false;
+      }
+
+      const statusLower = (activity.status || '').toLowerCase();
+      
+      // Verificar se está concluída - múltiplas formas
+      const isConcluidoByStatus = statusLower.includes('concluído') || 
+                                  statusLower.includes('concluido') || 
+                                  statusLower.includes('concluida') ||
+                                  statusLower === 'concluído' ||
+                                  statusLower === 'concluido' ||
+                                  statusLower === 'concluida' ||
+                                  statusLower.trim() === 'concluído' ||
+                                  statusLower.trim() === 'concluido' ||
+                                  statusLower.trim() === 'concluida';
+      
+      // Verificar se tem horário de fim real (indica que foi concluída)
+      const horarioFimReal = parseDateLocal(activity.horario_fim_real);
+      const isConcluidoByHorario = !!horarioFimReal;
+      
+      // Retornar true se estiver concluída por qualquer critério
+      return isConcluidoByStatus || isConcluidoByHorario;
+    });
+  }, [activities, activeTab, parseDateLocal]);
+
   // Aplicar filtro de rollback nas listas
   const atividadesEmAtrasoFiltered = useMemo(() => filterByRollback(atividadesEmAtraso), [atividadesEmAtraso, filterByRollback]);
   const atividadesEmAndamentoFiltered = useMemo(() => filterByRollback(atividadesEmAndamento), [atividadesEmAndamento, filterByRollback]);
@@ -535,6 +568,7 @@ function Dashboard() {
   const atividadesEmExecucaoForaPrazoFiltered = useMemo(() => filterByRollback(atividadesEmExecucaoForaPrazo), [atividadesEmExecucaoForaPrazo, filterByRollback]);
   const atividadesAIniciarNoPrazoFiltered = useMemo(() => filterByRollback(atividadesAIniciarNoPrazo), [atividadesAIniciarNoPrazo, filterByRollback]);
   const atividadesAIniciarForaPrazoFiltered = useMemo(() => filterByRollback(atividadesAIniciarForaPrazo), [atividadesAIniciarForaPrazo, filterByRollback]);
+  const atividadesConcluidasFiltered = useMemo(() => filterByRollback(atividadesConcluidas), [atividadesConcluidas, filterByRollback]);
 
   // Filtrar dados baseado na aba selecionada
   const getFilteredData = () => {
@@ -890,6 +924,21 @@ function Dashboard() {
             bgColor="bg-orange-50 border-orange-200"
           />
         </div>
+      </div>
+
+      {/* Lista de Atividades Concluídas */}
+      <div className="space-y-4 md:space-y-6">
+        <h2 className="text-xl md:text-2xl font-display font-bold text-vtal-gray-800">
+          ✅ Atividades Concluídas
+        </h2>
+        
+        <ActivityList
+          activities={atividadesConcluidasFiltered}
+          title="Concluídas"
+          icon="✅"
+          borderColor="border-green-500"
+          bgColor="bg-green-50 border-green-200"
+        />
       </div>
     </div>
   );
