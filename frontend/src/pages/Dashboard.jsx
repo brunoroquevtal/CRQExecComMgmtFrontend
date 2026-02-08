@@ -361,11 +361,7 @@ function Dashboard() {
     return null;
   }, []);
 
-  useEffect(() => {
-    loadData();
-  }, [rollbackFilter]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       console.log('[Dashboard] Carregando dados com filtro de rollback:', rollbackFilter);
       const [statsRes, activitiesRes] = await Promise.all([
@@ -375,6 +371,8 @@ function Dashboard() {
         api.get('/activities')
       ]);
       console.log('[Dashboard] Estatísticas recebidas:', statsRes.data);
+      console.log('[Dashboard] Filtro de rollback aplicado:', rollbackFilter);
+      console.log('[Dashboard] Estatísticas gerais:', statsRes.data?.geral);
       setStatistics(statsRes.data);
       setActivities(activitiesRes.data.activities || []);
       setLoading(false);
@@ -395,7 +393,11 @@ function Dashboard() {
       toast.error(errorMessage);
       setLoading(false);
     }
-  };
+  }, [rollbackFilter]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // Filtrar atividades por status e CRQ
   const getFilteredActivities = useCallback((statusFilter) => {
@@ -571,15 +573,27 @@ function Dashboard() {
   const atividadesConcluidasFiltered = useMemo(() => filterByRollback(atividadesConcluidas), [atividadesConcluidas, filterByRollback]);
 
   // Filtrar dados baseado na aba selecionada
-  const getFilteredData = () => {
-    if (!statistics) return null;
+  // IMPORTANTE: Usar useMemo para recalcular quando statistics ou activeTab mudarem
+  const filteredStats = useMemo(() => {
+    if (!statistics) {
+      console.log('[Dashboard] ⚠️ Statistics é null no filteredStats');
+      return null;
+    }
+
+    console.log('[Dashboard] 📊 Recalculando filteredStats:', {
+      activeTab,
+      rollbackFilter,
+      hasStatistics: !!statistics,
+      hasGeral: !!statistics.geral,
+      geral: statistics.geral
+    });
 
     if (activeTab === 'all') {
       return statistics;
     }
 
     // Filtrar por CRQ selecionado
-    const filteredStats = {
+    const filtered = {
       geral: {
         total: 0,
         concluidas: 0,
@@ -591,27 +605,32 @@ function Dashboard() {
       por_sequencia: {}
     };
 
-    if (statistics.por_sequencia[activeTab]) {
+    if (statistics.por_sequencia && statistics.por_sequencia[activeTab]) {
       const seqStats = statistics.por_sequencia[activeTab];
-      filteredStats.geral = { ...seqStats };
-      filteredStats.por_sequencia[activeTab] = seqStats;
+      filtered.geral = { ...seqStats };
+      filtered.por_sequencia[activeTab] = seqStats;
     }
 
-    return filteredStats;
-  };
-
-  const filteredStats = getFilteredData();
+    return filtered;
+  }, [statistics, activeTab]);
   const { geral, por_sequencia } = filteredStats || {};
 
   // Garantir que geral existe e tem todas as propriedades
-  const geralSafe = geral || {
-    total: 0,
-    concluidas: 0,
-    em_execucao_no_prazo: 0,
-    em_execucao_fora_prazo: 0,
-    a_iniciar_no_prazo: 0,
-    a_iniciar_fora_prazo: 0
-  };
+  const geralSafe = useMemo(() => {
+    const safe = geral || {
+      total: 0,
+      concluidas: 0,
+      em_execucao_no_prazo: 0,
+      em_execucao_fora_prazo: 0,
+      a_iniciar_no_prazo: 0,
+      a_iniciar_fora_prazo: 0
+    };
+    console.log('[Dashboard] 📈 geralSafe calculado:', {
+      rollbackFilter,
+      geral: safe
+    });
+    return safe;
+  }, [geral, rollbackFilter]);
 
   // Calcular total baseado nas atividades filtradas por rollback
   const atividadesFiltradasPorRollback = useMemo(() => {
